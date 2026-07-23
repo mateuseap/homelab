@@ -37,7 +37,7 @@ spec:
       enableServiceLinks: false
       containers:
         - name: livekit
-          image: livekit/livekit-server:v1.7.2
+          image: livekit/livekit-server:v1.13.4
           args: [--config, /etc/livekit/config.yaml]
           env:
             - name: LIVEKIT_KEYS
