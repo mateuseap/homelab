@@ -22,7 +22,7 @@ git repo. Kubernetes is an explicit goal (learning/portfolio), not just a means.
 
 ## Naming
 
-- `chess.lab.mateuseap.com` (+ chesskernel's own domain, same ingress)
+- `chesskernel.lab.mateuseap.com` (+ chesskernel's own domain, same ingress)
 - `gather` → **pixelhub** at `pixelhub.lab.mateuseap.com` (future)
 - `argo.lab.mateuseap.com`, `grafana.lab.mateuseap.com`
 

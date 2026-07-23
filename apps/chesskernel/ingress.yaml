@@ -38,7 +38,7 @@ metadata:
 spec:
   ingressClassName: traefik
   rules:
-    - host: chess.lab.mateuseap.com
+    - host: chesskernel.lab.mateuseap.com
       http:
         paths:
           - path: /
@@ -49,5 +49,5 @@ spec:
                 port:
                   number: 80
   tls:
-    - hosts: [chess.lab.mateuseap.com]
+    - hosts: [chesskernel.lab.mateuseap.com]
       secretName: chesskernel-lab-tls
