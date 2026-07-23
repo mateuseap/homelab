@@ -1,0 +1,65 @@
+# Descriptive metadata for the cluster's namespaces. Names follow ecosystem
+# conventions on purpose (argocd, cert-manager, monitoring are what every
+# tool and doc assume); the description annotation is where the human
+# context lives. Prune=false: deleting a line here must never delete a
+# namespace and everything in it.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: chesskernel
+  annotations:
+    argocd.argoproj.io/sync-options: Prune=false
+    homelab.mateuseap.com/description: >-
+      ChessKernel chess platform: web client, NestJS API + Socket.IO server,
+      PostgreSQL, Redis. Public at chesskernel.com.
+  labels:
+    app.kubernetes.io/part-of: homelab
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: pixelhub
+  annotations:
+    argocd.argoproj.io/sync-options: Prune=false
+    homelab.mateuseap.com/description: >-
+      PixelHub 2D virtual world: Phaser client, Colyseus server, LiveKit SFU
+      for proximity voice. Public at pixelhub.lab.mateuseap.com.
+  labels:
+    app.kubernetes.io/part-of: homelab
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: monitoring
+  annotations:
+    argocd.argoproj.io/sync-options: Prune=false
+    homelab.mateuseap.com/description: >-
+      Observability stack (kube-prometheus-stack): Prometheus, Grafana with
+      the curated Homelab Overview dashboard, exporters. Public Grafana at
+      grafana.lab.mateuseap.com.
+  labels:
+    app.kubernetes.io/part-of: homelab
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: cert-manager
+  annotations:
+    argocd.argoproj.io/sync-options: Prune=false
+    homelab.mateuseap.com/description: >-
+      TLS automation: cert-manager issuing and renewing Let's Encrypt
+      certificates for every ingress host via HTTP-01.
+  labels:
+    app.kubernetes.io/part-of: homelab
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: argocd
+  annotations:
+    argocd.argoproj.io/sync-options: Prune=false
+    homelab.mateuseap.com/description: >-
+      GitOps control plane: ArgoCD watches github.com/mateuseap/homelab and
+      keeps this cluster matching it. UI at argo.lab.mateuseap.com.
+  labels:
+    app.kubernetes.io/part-of: homelab
