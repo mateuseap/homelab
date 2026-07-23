@@ -58,3 +58,9 @@ prometheusOperator:
   resources:
     requests: { cpu: 20m, memory: 100Mi }
     limits: { memory: 200Mi }
+  admissionWebhooks:
+    # Webhook certs via cert-manager instead of the chart's patch Jobs.
+    # The Jobs are ArgoCD sync hooks that self-delete on completion and
+    # race ArgoCD's status check, marking every sync as failed.
+    certManager:
+      enabled: true
