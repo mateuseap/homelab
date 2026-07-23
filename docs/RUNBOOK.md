@@ -12,6 +12,10 @@ Operational procedures. Everything here assumes SSH access to the VPS and
    git clone https://github.com/mateuseap/homelab && cd homelab
    sudo bash bootstrap/install.sh
    ```
+   The bootstrap also hardens the host automatically and idempotently: 2 GB
+   swap, fail2ban, the node-exporter (9100) firewall, and SSH key-only auth
+   (the last only activates once your public key is in `authorized_keys`, so a
+   fresh box is never locked out; add your key and re-run to lock it down).
 3. **Secrets** (first boot of a new cluster only, sealed secrets are bound to
    the cluster's key): re-seal and commit, see § Secrets below.
 4. **Watch it converge**: `https://argo.lab.mateuseap.com`, all apps green.

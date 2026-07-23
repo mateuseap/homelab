@@ -12,6 +12,68 @@ ARGOCD_VERSION="stable"
 
 log() { echo -e "\033[1;32m[homelab]\033[0m $*"; }
 
+# ── 0. Host hardening (swap, firewall, fail2ban, SSH). Idempotent. ──────────
+harden_host() {
+  export DEBIAN_FRONTEND=noninteractive
+
+  # 2 GB swap. Prometheus and image builds spike memory; without swap the node
+  # OOM-locked once. Low swappiness so it only engages under real pressure.
+  if ! swapon --show | grep -q swapfile; then
+    log "Adding 2 GB swap..."
+    fallocate -l 2G /swapfile && chmod 600 /swapfile && mkswap /swapfile >/dev/null && swapon /swapfile
+    grep -q '/swapfile' /etc/fstab || echo '/swapfile none swap sw 0 0' >> /etc/fstab
+    sysctl -w vm.swappiness=10 >/dev/null
+    grep -q '^vm.swappiness' /etc/sysctl.conf || echo 'vm.swappiness=10' >> /etc/sysctl.conf
+  fi
+
+  # fail2ban plus persistent iptables tooling.
+  if ! command -v fail2ban-client >/dev/null 2>&1 || ! command -v netfilter-persistent >/dev/null 2>&1; then
+    log "Installing fail2ban and iptables-persistent..."
+    echo 'iptables-persistent iptables-persistent/autosave_v4 boolean false' | debconf-set-selections
+    echo 'iptables-persistent iptables-persistent/autosave_v6 boolean false' | debconf-set-selections
+    apt-get update -qq && apt-get install -y -qq netfilter-persistent iptables-persistent fail2ban
+  fi
+  install -d /etc/fail2ban/jail.d
+  cat > /etc/fail2ban/jail.d/sshd.local <<'EOF'
+[sshd]
+enabled = true
+port = 22
+maxretry = 4
+bantime = 1h
+findtime = 10m
+EOF
+  systemctl enable --now fail2ban >/dev/null 2>&1 || true
+
+  # node-exporter (:9100) serves unauthenticated host metrics. Restrict it to
+  # the pod network, loopback, and the node itself; drop the public internet.
+  # Traffic to the node's own IP routes via lo, which is what the kubelet
+  # liveness probe uses, so -i lo must be allowed or node-exporter crashloops.
+  allow9100() { iptables -C INPUT $1 -p tcp --dport 9100 -j ACCEPT 2>/dev/null || iptables -I INPUT $1 -p tcp --dport 9100 -j ACCEPT; }
+  iptables -C INPUT -p tcp --dport 9100 -j DROP 2>/dev/null || iptables -A INPUT -p tcp --dport 9100 -j DROP
+  allow9100 "-i lo"
+  allow9100 "-s 127.0.0.0/8"
+  allow9100 "-s 10.42.0.0/16"   # k3s default pod CIDR
+  netfilter-persistent save >/dev/null 2>&1 || true
+
+  # SSH key-only, but only once a key is present, never lock out a fresh box.
+  if [ -s /root/.ssh/authorized_keys ] || [ -s "${HOME}/.ssh/authorized_keys" ]; then
+    if [ ! -f /etc/ssh/sshd_config.d/00-security-hardening.conf ]; then
+      log "Enabling SSH key-only auth (authorized_keys present)..."
+      cat > /etc/ssh/sshd_config.d/00-security-hardening.conf <<'EOF'
+PasswordAuthentication no
+PermitRootLogin prohibit-password
+KbdInteractiveAuthentication no
+EOF
+      sshd -t && { systemctl reload ssh 2>/dev/null || systemctl reload sshd 2>/dev/null || true; }
+    fi
+  else
+    log "SSH still allows passwords: no authorized_keys yet. Add your key, then re-run to lock it down."
+  fi
+}
+
+log "Hardening host..."
+harden_host
+
 # ── 1. k3s (includes Traefik ingress, CoreDNS, local-path storage) ──────────
 if ! command -v k3s >/dev/null 2>&1; then
   log "Installing k3s..."
