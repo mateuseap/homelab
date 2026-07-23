@@ -14,6 +14,7 @@ data:
       udp_port: 7882
       tcp_port: 7881
       use_external_ip: true
+    prometheus_port: 6789
     logging:
       level: info
 ---
@@ -45,6 +46,7 @@ spec:
                 secretKeyRef: { name: pixelhub-secrets, key: livekit-keys }
           ports:
             - containerPort: 7880 # ws signaling (behind ingress)
+            - containerPort: 6789 # prometheus metrics (cluster-internal)
             - containerPort: 7882
               hostPort: 7882
               protocol: UDP # WebRTC media, single mux port
@@ -72,9 +74,12 @@ kind: Service
 metadata:
   name: livekit
   namespace: pixelhub
+  labels: { app: livekit }
 spec:
   selector: { app: livekit }
-  ports: [{ port: 7880 }]
+  ports:
+    - { name: http, port: 7880 }
+    - { name: metrics, port: 6789 }
 ---
 apiVersion: networking.k8s.io/v1
 kind: Ingress
@@ -99,3 +104,19 @@ spec:
   tls:
     - hosts: [livekit.lab.mateuseap.com]
       secretName: livekit-tls
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: livekit
+  namespace: pixelhub
+  labels:
+    release: monitoring
+spec:
+  selector:
+    matchLabels: { app: livekit }
+  endpoints:
+    - port: metrics
+      interval: 60s
+  namespaceSelector:
+    matchNames: [pixelhub]
