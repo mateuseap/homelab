@@ -1,0 +1,60 @@
+# kube-prometheus-stack values, trimmed for 1 vCPU / 4GB single-node.
+alertmanager:
+  enabled: false # no paging pipeline on a homelab; Grafana shows state
+
+prometheus:
+  prometheusSpec:
+    retention: 5d
+    retentionSize: 2GB
+    storageSpec:
+      volumeClaimTemplate:
+        spec:
+          storageClassName: local-path
+          accessModes: [ReadWriteOnce]
+          resources:
+            requests:
+              storage: 3Gi
+    resources:
+      requests: { cpu: 50m, memory: 350Mi }
+      limits: { cpu: 300m, memory: 500Mi }
+
+grafana:
+  adminPassword: changeme-on-first-login # rotate in UI; not a secret worth sealing
+  persistence:
+    enabled: true
+    storageClassName: local-path
+    size: 1Gi
+  resources:
+    requests: { cpu: 20m, memory: 100Mi }
+    limits: { memory: 200Mi }
+  ingress:
+    enabled: true
+    ingressClassName: traefik
+    annotations:
+      cert-manager.io/cluster-issuer: letsencrypt-prod
+    hosts: [grafana.lab.mateuseap.com]
+    tls:
+      - hosts: [grafana.lab.mateuseap.com]
+        secretName: grafana-tls
+
+# Single-node: control-plane components run inside k3s's single process and
+# don't expose these endpoints separately — scraping them only creates noise.
+kubeControllerManager: { enabled: false }
+kubeScheduler: { enabled: false }
+kubeProxy: { enabled: false }
+kubeEtcd: { enabled: false } # k3s uses sqlite, not etcd
+
+kube-state-metrics:
+  resources:
+    requests: { cpu: 10m, memory: 32Mi }
+    limits: { memory: 64Mi }
+
+prometheus-node-exporter:
+  resources:
+    requests: { cpu: 10m, memory: 24Mi }
+    limits: { memory: 48Mi }
+
+prometheusOperator:
+  resources:
+    requests: { cpu: 20m, memory: 100Mi }
+    limits: { memory: 200Mi }

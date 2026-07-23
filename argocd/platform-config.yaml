@@ -1,0 +1,19 @@
+# Cluster-wide plumbing: Let's Encrypt issuer + ArgoCD UI ingress.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: platform-config
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "1" # needs cert-manager CRDs (wave 0)
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/mateuseap/homelab
+    targetRevision: main
+    path: platform/config
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: argocd
+  syncPolicy:
+    automated: { prune: true, selfHeal: true }

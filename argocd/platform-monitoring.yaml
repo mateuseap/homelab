@@ -1,0 +1,29 @@
+# kube-prometheus-stack, trimmed for 1 vCPU / 4GB.
+# Chart values live in platform/monitoring/values.yaml (multi-source ref).
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: monitoring
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+spec:
+  project: default
+  sources:
+    - repoURL: https://prometheus-community.github.io/helm-charts
+      chart: kube-prometheus-stack
+      targetRevision: 62.7.0
+      helm:
+        valueFiles:
+          - $values/platform/monitoring/values.yaml
+    - repoURL: https://github.com/mateuseap/homelab
+      targetRevision: main
+      ref: values
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: monitoring
+  syncPolicy:
+    automated: { prune: true, selfHeal: true }
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true # CRDs are huge; client-side apply exceeds annotation limits

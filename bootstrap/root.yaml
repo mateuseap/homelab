@@ -1,0 +1,20 @@
+# Root app-of-apps: watches argocd/ in this repo. Every Application manifest
+# there becomes a managed app. Adding a project = adding one file there.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: root
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/mateuseap/homelab
+    targetRevision: main
+    path: argocd
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: argocd
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true

@@ -1,0 +1,54 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: postgres
+  namespace: chesskernel
+spec:
+  serviceName: postgres
+  replicas: 1
+  selector:
+    matchLabels: { app: postgres }
+  template:
+    metadata:
+      labels: { app: postgres }
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:16-alpine
+          ports: [{ containerPort: 5432 }]
+          env:
+            - name: POSTGRES_USER
+              value: chesskernel
+            - name: POSTGRES_DB
+              value: chesskernel
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef: { name: chesskernel-secrets, key: postgres-password }
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/postgresql/data
+          resources:
+            requests: { cpu: 30m, memory: 100Mi }
+            limits: { memory: 300Mi }
+          readinessProbe:
+            exec:
+              command: [pg_isready, -U, chesskernel]
+            periodSeconds: 10
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        storageClassName: local-path
+        accessModes: [ReadWriteOnce]
+        resources:
+          requests:
+            storage: 2Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres
+  namespace: chesskernel
+spec:
+  selector: { app: postgres }
+  ports: [{ port: 5432 }]

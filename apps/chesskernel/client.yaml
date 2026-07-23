@@ -1,0 +1,33 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: client
+  namespace: chesskernel
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: client }
+  template:
+    metadata:
+      labels: { app: client }
+    spec:
+      containers:
+        - name: client
+          image: ghcr.io/mateuseap/chesskernel-client:latest
+          imagePullPolicy: Always
+          ports: [{ containerPort: 80 }]
+          resources:
+            requests: { cpu: 10m, memory: 24Mi }
+            limits: { memory: 64Mi }
+          readinessProbe:
+            httpGet: { path: /, port: 80 }
+            periodSeconds: 15
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: client
+  namespace: chesskernel
+spec:
+  selector: { app: client }
+  ports: [{ port: 80 }]

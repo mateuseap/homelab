@@ -1,0 +1,59 @@
+# Nightly pg_dump → Cloudflare R2 (S3-compatible), 14-day rotation by key date.
+# R2 credentials come from the sealed secret r2-backup-credentials.
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: postgres-backup
+  namespace: chesskernel
+spec:
+  schedule: "0 3 * * *" # 03:00 UTC nightly
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      template:
+        spec:
+          restartPolicy: Never
+          containers:
+            - name: backup
+              image: postgres:16-alpine
+              command: [/bin/sh, -c]
+              args:
+                - |
+                  set -eu
+                  apk add --no-cache aws-cli >/dev/null
+                  STAMP=$(date +%F)
+                  FILE="/tmp/chesskernel-${STAMP}.sql.gz"
+                  pg_dump -h postgres -U chesskernel chesskernel | gzip > "$FILE"
+                  aws s3 cp "$FILE" "s3://${R2_BUCKET}/chesskernel/" \
+                    --endpoint-url "$R2_ENDPOINT"
+                  # prune: delete dumps older than 14 days
+                  CUTOFF=$(date -d "@$(( $(date +%s) - 14*86400 ))" +%F)
+                  aws s3 ls "s3://${R2_BUCKET}/chesskernel/" --endpoint-url "$R2_ENDPOINT" \
+                    | awk '{print $4}' | while read -r key; do
+                        [ -n "$key" ] && [ "$key" \< "chesskernel-${CUTOFF}" ] \
+                          && aws s3 rm "s3://${R2_BUCKET}/chesskernel/$key" \
+                               --endpoint-url "$R2_ENDPOINT" || true
+                      done
+                  echo "backup ok: $FILE"
+              env:
+                - name: PGPASSWORD
+                  valueFrom:
+                    secretKeyRef: { name: chesskernel-secrets, key: postgres-password }
+                - name: AWS_ACCESS_KEY_ID
+                  valueFrom:
+                    secretKeyRef: { name: r2-backup-credentials, key: access-key-id }
+                - name: AWS_SECRET_ACCESS_KEY
+                  valueFrom:
+                    secretKeyRef: { name: r2-backup-credentials, key: secret-access-key }
+                - name: R2_ENDPOINT
+                  valueFrom:
+                    secretKeyRef: { name: r2-backup-credentials, key: endpoint }
+                - name: R2_BUCKET
+                  valueFrom:
+                    secretKeyRef: { name: r2-backup-credentials, key: bucket }
+              resources:
+                requests: { cpu: 20m, memory: 64Mi }
+                limits: { memory: 128Mi }

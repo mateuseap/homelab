@@ -1,0 +1,31 @@
+# Two hostnames, one app: the lab subdomain plus chesskernel's own domain.
+# TODO(mateuseap): replace CHESSKERNEL_OWN_DOMAIN with the real domain
+# (the DOMAIN value from the old docker-compose .env), then point its DNS
+# A record at the VPS.
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: chesskernel
+  namespace: chesskernel
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+spec:
+  ingressClassName: traefik
+  rules:
+    - host: chess.lab.mateuseap.com
+      http: &routes
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: client
+                port:
+                  number: 80
+    - host: CHESSKERNEL_OWN_DOMAIN
+      http: *routes
+  tls:
+    - hosts: [chess.lab.mateuseap.com]
+      secretName: chesskernel-lab-tls
+    - hosts: [CHESSKERNEL_OWN_DOMAIN]
+      secretName: chesskernel-own-tls
