@@ -31,6 +31,10 @@ spec:
     metadata:
       labels: { app: livekit }
     spec:
+      # kubelet injects LIVEKIT_PORT=tcp://<clusterip>:7880 for the Service
+      # named "livekit"; livekit-server parses that env as its port flag and
+      # crashes. Service links are docker-era legacy, safe to disable.
+      enableServiceLinks: false
       containers:
         - name: livekit
           image: livekit/livekit-server:v1.7.2
