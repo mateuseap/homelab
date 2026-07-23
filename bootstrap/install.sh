@@ -6,7 +6,9 @@
 set -euo pipefail
 
 REPO_URL="https://github.com/mateuseap/homelab"
-ARGOCD_VERSION="v2.12.6"
+# "stable" tracks the latest stable release; older pins hit diff-schema bugs
+# against current Kubernetes (e.g. .status.terminatingReplicas on 2.12).
+ARGOCD_VERSION="stable"
 
 log() { echo -e "\033[1;32m[homelab]\033[0m $*"; }
 
@@ -23,14 +25,11 @@ log "Waiting for node to be Ready..."
 until $KUBECTL wait --for=condition=Ready node --all --timeout=300s >/dev/null 2>&1; do sleep 5; done
 
 # ── 2. ArgoCD ───────────────────────────────────────────────────────────────
-if ! $KUBECTL get ns argocd >/dev/null 2>&1; then
-  log "Installing ArgoCD ${ARGOCD_VERSION}..."
-  $KUBECTL create namespace argocd
-  $KUBECTL apply -n argocd -f \
-    "https://raw.githubusercontent.com/argoproj/argo-cd/${ARGOCD_VERSION}/manifests/install.yaml"
-else
-  log "ArgoCD namespace exists, skipping install."
-fi
+log "Installing/upgrading ArgoCD (${ARGOCD_VERSION})..."
+$KUBECTL get ns argocd >/dev/null 2>&1 || $KUBECTL create namespace argocd
+# apply is idempotent: fresh install and upgrade are the same operation
+$KUBECTL apply -n argocd -f \
+  "https://raw.githubusercontent.com/argoproj/argo-cd/${ARGOCD_VERSION}/manifests/install.yaml"
 
 # Trim for 1 vCPU / 4GB: no dex (no SSO needed), no notifications controller.
 $KUBECTL -n argocd scale deployment argocd-dex-server --replicas=0 || true
