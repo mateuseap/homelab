@@ -6,6 +6,11 @@ prometheus:
   prometheusSpec:
     retention: 5d
     retentionSize: 2GB
+    # 60s scrape (default is 30s) halves series ingestion and memory on the
+    # shared vCPU. This is what stops the OOM kills that punched gaps in the
+    # dashboard: Prometheus was hitting its memory cap and restarting.
+    scrapeInterval: 60s
+    evaluationInterval: 60s
     storageSpec:
       volumeClaimTemplate:
         spec:
@@ -15,8 +20,10 @@ prometheus:
             requests:
               storage: 3Gi
     resources:
-      requests: { cpu: 50m, memory: 350Mi }
-      limits: { cpu: 300m, memory: 500Mi }
+      # Bumped from 500Mi: actual RSS reached ~508Mi and got OOM-killed.
+      # 768Mi cap plus the node's 2 GB swap gives real headroom.
+      requests: { cpu: 50m, memory: 420Mi }
+      limits: { cpu: 300m, memory: 768Mi }
 
 grafana:
   # Only curated dashboards (sidecar ConfigMaps): the chart's ~30 default
@@ -41,7 +48,7 @@ grafana:
         secretName: grafana-tls
 
 # Single-node: control-plane components run inside k3s's single process and
-# don't expose these endpoints separately — scraping them only creates noise.
+# don't expose these endpoints separately, so scraping them only creates noise.
 kubeControllerManager: { enabled: false }
 kubeScheduler: { enabled: false }
 kubeProxy: { enabled: false }

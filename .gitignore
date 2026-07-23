@@ -1,4 +1,4 @@
-# Plain-text secrets must never land in git — only sealed-secrets.yaml is safe.
+# Plain-text secrets must never land in git, only sealed-secrets.yaml is safe.
 secrets.yaml
 *.secret.yaml
 sealing-key-backup.yaml

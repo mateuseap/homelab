@@ -1,4 +1,4 @@
-# Let's Encrypt via HTTP-01 through Traefik — works with any DNS provider,
+# Let's Encrypt via HTTP-01 through Traefik, works with any DNS provider,
 # no API tokens needed. One cert per hostname, all automatic.
 apiVersion: cert-manager.io/v1
 kind: ClusterIssuer

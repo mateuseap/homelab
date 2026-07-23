@@ -1,4 +1,4 @@
-# Homelab Platform — Design
+# Homelab Platform: Design
 
 **Date**: 2026-07-23 · **Status**: approved
 
@@ -34,9 +34,9 @@ platform components carry requests/limits.
 
 ## Repos
 
-- `mateuseap/homelab` — this repo: bootstrap, platform, apps (source of truth)
-- `mateuseap/chesskernel` — app code + CI → GHCR
-- `mateuseap/pixelhub` — Gather.town-style world (own design cycle; v1 = 2D
+- `mateuseap/homelab`, this repo: bootstrap, platform, apps (source of truth)
+- `mateuseap/chesskernel`, app code + CI → GHCR
+- `mateuseap/pixelhub`, Gather.town-style world (own design cycle; v1 = 2D
   world + proximity text/audio via Phaser + Colyseus + LiveKit, audio-only
   because video would saturate 1 vCPU)
 
