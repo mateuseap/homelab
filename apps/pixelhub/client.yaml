@@ -11,10 +11,14 @@ spec:
     metadata:
       labels: { app: client }
     spec:
+      securityContext:
+        seccompProfile: { type: RuntimeDefault }
       containers:
         - name: client
           image: ghcr.io/mateuseap/pixelhub-client:latest
           imagePullPolicy: Always
+          securityContext:
+            allowPrivilegeEscalation: false
           ports: [{ containerPort: 80 }]
           resources:
             requests: { cpu: 10m, memory: 24Mi }

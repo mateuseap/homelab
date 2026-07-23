@@ -11,10 +11,15 @@ spec:
     metadata:
       labels: { app: server }
     spec:
+      securityContext:
+        seccompProfile: { type: RuntimeDefault }
       containers:
         - name: server
           image: ghcr.io/mateuseap/pixelhub-server:latest
           imagePullPolicy: Always
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities: { drop: [ALL] }
           ports: [{ containerPort: 2567 }]
           env:
             - name: NODE_ENV
