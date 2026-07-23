@@ -36,6 +36,84 @@ Hand-configured servers rot: undocumented tweaks pile up, migrations become arch
 | 🗝 **sealed-secrets** | Encrypted secrets, safe in public git |
 | 💾 **Nightly backups** | `pg_dump` to Cloudflare R2, 14-day rotation |
 
+## Architecture at a glance
+
+**The cluster.** One k3s node runs the whole platform. Everything above the base layer is an ArgoCD Application defined in this repo.
+
+```mermaid
+flowchart TB
+    gh["GitHub: mateuseap/homelab<br/>(source of truth)"]
+    subgraph node["k3s node (1 vCPU / 4 GB VPS)"]
+        argo["ArgoCD<br/>watches the repo, applies manifests"]
+        traefik["Traefik ingress<br/>TLS termination, host routing"]
+        cm["cert-manager<br/>Let's Encrypt certificates"]
+        seal["sealed-secrets<br/>decrypts SealedSecrets in-cluster"]
+        subgraph apps["apps"]
+            chess["ChessKernel<br/>client, server, postgres, redis"]
+            pixel["PixelHub<br/>client, server, LiveKit"]
+        end
+        mon["Prometheus + Grafana<br/>curated Homelab Overview dashboard"]
+        cron["CronJob<br/>nightly pg_dump"]
+    end
+    r2[("Cloudflare R2<br/>backups, 14-day rotation")]
+    ghcr[("GHCR<br/>container images")]
+    users(("browsers"))
+
+    gh -->|poll| argo
+    argo --> apps
+    argo --> mon
+    argo --> seal
+    argo --> cm
+    cm --> traefik
+    users -->|HTTPS| traefik
+    traefik --> chess
+    traefik --> pixel
+    traefik --> argo
+    traefik --> mon
+    ghcr -.->|image pulls| apps
+    cron --> r2
+    seal -.-> chess
+```
+
+**The deploy loop.** Merging to `main` is the only deploy action. App code and platform config both flow through git.
+
+```mermaid
+flowchart LR
+    dev(["push to main"])
+    subgraph app["app repo (ChessKernel / PixelHub)"]
+        ci["GitHub Actions<br/>build image"]
+    end
+    ghcr[("GHCR")]
+    subgraph hl["homelab repo"]
+        manifest["Application + manifests"]
+    end
+    argo["ArgoCD"]
+    k8s["k3s cluster"]
+
+    dev --> ci
+    ci -->|push :latest and :sha| ghcr
+    dev --> manifest
+    manifest -->|detected| argo
+    argo -->|sync: apply, prune, self-heal| k8s
+    ghcr -.->|pulled on rollout| k8s
+```
+
+**The request path.** A browser reaches an app through one wildcard DNS record, TLS terminating at Traefik.
+
+```mermaid
+flowchart LR
+    user(("browser"))
+    dns["*.lab wildcard DNS"]
+    traefik["Traefik ingress<br/>reads the Host header"]
+    svc["Service"]
+    pod["Pod"]
+
+    user -->|"https://app.lab.mateuseap.com"| dns
+    dns -->|resolves to the node| traefik
+    traefik -->|"TLS via cert-manager, route by hostname"| svc
+    svc --> pod
+```
+
 ## Quick Start
 
 ```bash
