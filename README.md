@@ -28,8 +28,8 @@ Hand-configured servers rot: undocumented tweaks pile up, migrations become arch
 
 |  |  |
 |--|--|
-| ♟ **[chesskernel](https://github.com/mateuseap/chesskernel)** | Chess platform at [chesskernel.com](https://chesskernel.com) |
-| 👾 **[pixelhub](https://github.com/mateuseap/pixelhub)** | Gather-style 2D world with proximity chat |
+| ♟️ **[ChessKernel](https://github.com/mateuseap/chesskernel)** | Chess platform at [chesskernel.com](https://chesskernel.com) |
+| 👾 **[PixelHub](https://github.com/mateuseap/pixelhub)** | Gather-style 2D world with proximity chat and voice |
 | 🛰 **ArgoCD** | GitOps engine and live app dashboard (`argo.lab.mateuseap.com`) |
 | 📈 **Grafana + Prometheus** | Metrics, trimmed for a 1 vCPU node (`grafana.lab.mateuseap.com`) |
 | 🔐 **cert-manager** | Automatic Let's Encrypt TLS for every host |
