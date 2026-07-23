@@ -19,7 +19,10 @@ prometheus:
       limits: { cpu: 300m, memory: 500Mi }
 
 grafana:
-  adminPassword: changeme-on-first-login # rotate in UI; not a secret worth sealing
+  # Only curated dashboards (sidecar ConfigMaps): the chart's ~30 default
+  # dashboards are noise for a single-node homelab.
+  defaultDashboardsEnabled: false
+  adminPassword: changeme-on-first-login # rotated in UI
   persistence:
     enabled: true
     storageClassName: local-path
