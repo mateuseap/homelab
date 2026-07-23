@@ -5,8 +5,8 @@
 **One VPS, declared in git. Everything else is a `git push`.**  
 GitOps · k3s · ArgoCD · Reproducible in ~30 minutes
 
-[![license](https://img.shields.io/github/license/mateuseap/homelab?style=flat-square&color=5ba3b0)](LICENSE)
-[![stars](https://img.shields.io/github/stars/mateuseap/homelab?style=flat-square)](https://github.com/mateuseap/homelab/stargazers)
+[![license](https://badgen.net/github/license/mateuseap/homelab?color=5ba3b0)](LICENSE)
+[![stars](https://badgen.net/github/stars/mateuseap/homelab)](https://github.com/mateuseap/homelab/stargazers)
 [![visitors](https://visitor-badge.laobi.icu/badge?page_id=mateuseap.homelab)](https://github.com/mateuseap/homelab)
 
 <br />
@@ -48,10 +48,8 @@ flowchart TB
         traefik["Traefik ingress<br/>TLS termination, host routing"]
         cm["cert-manager<br/>Let's Encrypt certificates"]
         seal["sealed-secrets<br/>decrypts SealedSecrets in-cluster"]
-        subgraph apps["apps"]
-            chess["ChessKernel<br/>client, server, postgres, redis"]
-            pixel["PixelHub<br/>client, server, LiveKit"]
-        end
+        chess["ChessKernel<br/>client, server, postgres, redis"]
+        pixel["PixelHub<br/>client, server, LiveKit"]
         mon["Prometheus + Grafana<br/>curated Homelab Overview dashboard"]
         cron["CronJob<br/>nightly pg_dump"]
     end
@@ -60,7 +58,8 @@ flowchart TB
     users(("browsers"))
 
     gh -->|poll| argo
-    argo --> apps
+    argo --> chess
+    argo --> pixel
     argo --> mon
     argo --> seal
     argo --> cm
@@ -70,7 +69,8 @@ flowchart TB
     traefik --> pixel
     traefik --> argo
     traefik --> mon
-    ghcr -.->|image pulls| apps
+    ghcr -.->|image pulls| chess
+    ghcr -.->|image pulls| pixel
     cron --> r2
     seal -.-> chess
 ```
