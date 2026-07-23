@@ -1,6 +1,6 @@
 <div align="center">
 
-# 🏗 homelab
+# 🏗 HomeLab
 
 **One VPS, declared in git. Everything else is a `git push`.**  
 GitOps · k3s · ArgoCD · Reproducible in ~30 minutes
@@ -15,7 +15,7 @@ GitOps · k3s · ArgoCD · Reproducible in ~30 minutes
 
 ---
 
-## Why homelab?
+## Why HomeLab?
 
 Hand-configured servers rot: undocumented tweaks pile up, migrations become archaeology, and every new project means another SSH session. This repo is the single source of truth for my VPS. ArgoCD watches it and makes the cluster match, so the machine is disposable and the repo is forever.
 
