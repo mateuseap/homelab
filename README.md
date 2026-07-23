@@ -52,10 +52,10 @@ Point `*.lab.yourdomain.com` at the machine, seal your secrets, restore the late
 | Layer | Technology |
 |-------|-----------|
 | Kubernetes | k3s (single node, Traefik, local-path storage) |
-| GitOps | ArgoCD (app-of-apps, sync waves, auto prune + self-heal) |
-| TLS | cert-manager + Let's Encrypt HTTP-01 |
+| GitOps | ArgoCD v3.4.5 (app-of-apps, sync waves, auto prune + self-heal) |
+| TLS | cert-manager v1.15.3 + Let's Encrypt HTTP-01 |
 | Secrets | sealed-secrets |
-| Monitoring | kube-prometheus-stack (5-day retention, alertmanager off) |
+| Monitoring | kube-prometheus-stack 62.7.0 (5-day retention, alertmanager off) |
 | Backups | CronJob `pg_dump` to Cloudflare R2 (S3-compatible) |
 | Registry | GHCR, images built by GitHub Actions in each app repo |
 
@@ -69,6 +69,29 @@ Point `*.lab.yourdomain.com` at the machine, seal your secrets, restore the late
 | [`apps/`](apps/) | Per-project manifests |
 | [`docs/RUNBOOK.md`](docs/RUNBOOK.md) | Operate, migrate, restore, add projects |
 | [`docs/specs/`](docs/specs/) | Design decisions and their rationale |
+
+## Documentation
+
+| Doc | Description |
+|-----|------------|
+| [Platform Overview](docs/architecture/overview.md) | Whole platform with diagrams: components, GitOps flow, traffic, TLS, backups |
+| [Architecture Decisions](docs/adr/) | Numbered ADRs: k3s, app-of-apps, sealed-secrets, cert-manager, DNS, backups |
+| [Networking](docs/networking.md) | Wildcard DNS, Traefik SNI routing, hostname map, LiveKit media exception |
+| [Security](docs/security/security.md) | Sealed-secrets model, TLS, host hardening, single-node tradeoffs |
+| [Adding an App](docs/operations/adding-an-app.md) | Manifests, Application, sealed secret, ingress, ServiceMonitor, upgrades |
+| [Runbook](docs/RUNBOOK.md) | Bootstrap, migrate, restore, deploy, troubleshoot |
+| [Design Spec](docs/specs/) | Original platform design note and rationale |
+| [References](docs/references.md) | Curated study links for every technology in the stack |
+
+Monitoring is one curated **Homelab Overview** dashboard with four sections (VPS, Kubernetes, ChessKernel, PixelHub). Both apps are deployed, PixelHub with LiveKit voice, and both app servers expose cluster-internal `/metrics` scraped via ServiceMonitors.
+
+## Contributing
+
+Read [CONTRIBUTING.md](CONTRIBUTING.md) before opening a PR. A merge to `main` deploys: ArgoCD watches the repo and reconciles automatically. Never commit plaintext secrets; seal them.
+
+## Learn more
+
+New to any part of the stack (Kubernetes, k3s, ArgoCD, cert-manager, sealed-secrets, Traefik, Prometheus, Grafana, R2)? The [references](docs/references.md) collect official study links grouped by topic.
 
 ## License
 
