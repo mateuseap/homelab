@@ -1,4 +1,8 @@
-# Nightly pg_dump → Cloudflare R2 (S3-compatible), 14-day rotation by key date.
+# Nightly pg_dump to Cloudflare R2 (S3-compatible). Retention is bounded three
+# ways so the bucket can never exceed the R2 free tier (10 GB): a 14-day age
+# cutoff, a max object count, and a hard total-size cap of 8 GB. If a new dump
+# would push the bucket past the cap even after pruning, the upload is skipped
+# (losing that night's backup is preferred over exceeding the free tier).
 # R2 credentials come from the sealed secret r2-backup-credentials.
 apiVersion: batch/v1
 kind: CronJob
@@ -29,21 +33,64 @@ spec:
               args:
                 - |
                   set -eu
+                  # Free-tier guardrails. The bucket must never exceed the R2
+                  # free tier, so these are enforced before every upload.
+                  MAX_TOTAL_BYTES=8589934592   # 8 GiB, leaves 2 GB margin under 10 GB
+                  MAX_BACKUPS=14               # keep at most this many dumps
+                  MAX_AGE_DAYS=14
+                  PREFIX="s3://${R2_BUCKET}/chesskernel"
+                  E="--endpoint-url ${R2_ENDPOINT}"
+
                   apk add --no-cache aws-cli >/dev/null
+
+                  # oldest-first list of keys under the prefix
+                  list_keys() {
+                    aws s3api list-objects-v2 --bucket "$R2_BUCKET" --prefix chesskernel/ \
+                      $E --query 'sort_by(Contents,&LastModified)[].Key' --output text 2>/dev/null \
+                      | tr '\t' '\n' | grep -v '^None$' || true
+                  }
+                  total_bytes() {
+                    b=$(aws s3api list-objects-v2 --bucket "$R2_BUCKET" --prefix chesskernel/ \
+                      $E --query 'sum(Contents[].Size)' --output text 2>/dev/null || echo 0)
+                    [ "$b" = "None" ] && b=0
+                    echo "${b:-0}"
+                  }
+                  rm_key() { aws s3 rm "s3://${R2_BUCKET}/$1" $E >/dev/null 2>&1 || true; }
+
+                  # 1. prune by age
+                  CUTOFF=$(date -d "@$(( $(date +%s) - MAX_AGE_DAYS*86400 ))" +%F)
+                  list_keys | while read -r k; do
+                    base=$(basename "$k")
+                    [ "$base" \< "chesskernel-${CUTOFF}" ] && rm_key "$k" || true
+                  done
+
+                  # 2. prune by count (delete oldest beyond MAX_BACKUPS)
+                  COUNT=$(list_keys | wc -l)
+                  if [ "$COUNT" -gt "$MAX_BACKUPS" ]; then
+                    list_keys | head -n "$(( COUNT - MAX_BACKUPS ))" | while read -r k; do rm_key "$k"; done
+                  fi
+
+                  # take the dump now, measure it
                   STAMP=$(date +%F)
                   FILE="/tmp/chesskernel-${STAMP}.sql.gz"
                   pg_dump -h postgres -U chesskernel chesskernel | gzip > "$FILE"
-                  aws s3 cp "$FILE" "s3://${R2_BUCKET}/chesskernel/" \
-                    --endpoint-url "$R2_ENDPOINT"
-                  # prune: delete dumps older than 14 days
-                  CUTOFF=$(date -d "@$(( $(date +%s) - 14*86400 ))" +%F)
-                  aws s3 ls "s3://${R2_BUCKET}/chesskernel/" --endpoint-url "$R2_ENDPOINT" \
-                    | awk '{print $4}' | while read -r key; do
-                        [ -n "$key" ] && [ "$key" \< "chesskernel-${CUTOFF}" ] \
-                          && aws s3 rm "s3://${R2_BUCKET}/chesskernel/$key" \
-                               --endpoint-url "$R2_ENDPOINT" || true
-                      done
-                  echo "backup ok: $FILE"
+                  DUMP_BYTES=$(wc -c < "$FILE")
+
+                  # 3. prune oldest until the new dump fits under the size cap
+                  while [ "$(( $(total_bytes) + DUMP_BYTES ))" -gt "$MAX_TOTAL_BYTES" ]; do
+                    OLDEST=$(list_keys | head -n1)
+                    [ -z "$OLDEST" ] && break
+                    echo "size cap: pruning $OLDEST to make room"
+                    rm_key "$OLDEST"
+                  done
+
+                  # 4. upload only if it now fits; otherwise skip (prefer loose data)
+                  if [ "$(( $(total_bytes) + DUMP_BYTES ))" -le "$MAX_TOTAL_BYTES" ]; then
+                    aws s3 cp "$FILE" "${PREFIX}/" $E >/dev/null
+                    echo "backup ok: $FILE (${DUMP_BYTES} bytes); bucket now $(total_bytes) bytes"
+                  else
+                    echo "WARNING: skipped upload, a single dump (${DUMP_BYTES} bytes) exceeds the ${MAX_TOTAL_BYTES}-byte cap. No data uploaded, free tier protected."
+                  fi
               env:
                 - name: PGPASSWORD
                   valueFrom:

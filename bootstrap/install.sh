@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# homelab bootstrap — turns a fresh Ubuntu/Debian VPS into the full platform.
+# homelab bootstrap: turns a fresh Ubuntu/Debian VPS into the full platform.
 # Idempotent: safe to re-run. Requires: root (or sudo), curl.
 #
 # Usage: sudo bash install.sh
@@ -43,7 +43,7 @@ $KUBECTL -n argocd rollout restart deployment argocd-server
 log "Waiting for ArgoCD server..."
 $KUBECTL -n argocd rollout status deployment argocd-server --timeout=300s
 
-# ── 3. Root app-of-apps — from here on, git is the source of truth ──────────
+# ── 3. Root app-of-apps, from here on, git is the source of truth ──────────
 log "Applying root application (GitOps takes over)..."
 $KUBECTL apply -f "$(dirname "$0")/root.yaml"
 

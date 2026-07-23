@@ -12,9 +12,9 @@ Operational procedures. Everything here assumes SSH access to the VPS and
    git clone https://github.com/mateuseap/homelab && cd homelab
    sudo bash bootstrap/install.sh
    ```
-3. **Secrets** (first boot of a new cluster only — sealed secrets are bound to
+3. **Secrets** (first boot of a new cluster only, sealed secrets are bound to
    the cluster's key): re-seal and commit, see § Secrets below.
-4. **Watch it converge**: `https://argo.lab.mateuseap.com` — all apps green.
+4. **Watch it converge**: `https://argo.lab.mateuseap.com`, all apps green.
    (Initial admin password: see install.sh output.)
 5. **Restore data**: § Restore below.
 
@@ -40,6 +40,16 @@ shred -u /tmp/secrets.yaml
 kubectl -n kube-system get secret -l sealedsecrets.bitnami.com/sealed-secrets-key \
   -o yaml > sealing-key-backup.yaml   # store OUTSIDE git (password manager)
 ```
+
+## Backup retention and the R2 free tier
+
+The nightly CronJob keeps the bucket inside the Cloudflare R2 free tier (10 GB)
+by three independent limits, enforced before every upload: a 14-day age cutoff,
+a maximum of 14 dumps, and a hard total-size cap of 8 GB. If a new dump would
+push the bucket past 8 GB even after pruning the oldest, the upload is skipped
+and a warning is logged. Losing one night's backup is preferred over exceeding
+the free tier. Dumps are tiny today (kilobytes), so this only matters if the
+database grows by orders of magnitude.
 
 ## Restore a database backup
 
@@ -72,8 +82,7 @@ kubectl -n chesskernel rollout restart deploy/server deploy/client
 
 1. Create `apps/<name>/` with Deployment/Service/Ingress (+ sealed secrets).
 2. Add `argocd/app-<name>.yaml` (copy `app-chesskernel.yaml`, change name/path).
-3. Push. ArgoCD picks it up; cert-manager issues TLS for its subdomain. Done —
-   no DNS change needed (wildcard covers it), no SSH needed.
+3. Push. ArgoCD picks it up; cert-manager issues TLS for its subdomain. Done, no DNS change needed (wildcard covers it), no SSH needed.
 
 ## Cutover from docker-compose (one-time, chesskernel)
 
@@ -88,10 +97,10 @@ kubectl -n chesskernel rollout restart deploy/server deploy/client
 
 | Symptom | Check |
 |---|---|
-| App red in ArgoCD | `kubectl -n <ns> describe pod ...` — usually missing sealed secret |
-| No TLS cert | `kubectl describe certificate -A` — DNS must already resolve for HTTP-01 |
-| Node pressure | Grafana → Node Exporter dashboard; CPU throttling shows here first |
-| ArgoCD UI slow | It shares 1 vCPU with everything — normal during syncs |
+| App red in ArgoCD | `kubectl -n <ns> describe pod ...`, usually missing sealed secret |
+| No TLS cert | `kubectl describe certificate -A`, DNS must already resolve for HTTP-01 |
+| Node pressure | Grafana, the VPS section of the Homelab Overview dashboard; CPU throttling shows here first |
+| ArgoCD UI slow | It shares 1 vCPU with everything, normal during syncs |
 
 ## pixelhub voice (LiveKit)
 

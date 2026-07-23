@@ -1,6 +1,6 @@
 # Two Ingress objects on purpose: Traefik drops an ingress's whole TLS config
 # if ANY referenced secret is missing. the lab host's cert couldn't issue before the
-# *.lab.mateuseap.com DNS wildcard exists — keeping it separate means the
+# *.lab.mateuseap.com DNS wildcard exists, keeping it separate means the
 # production domain never waits on it.
 apiVersion: networking.k8s.io/v1
 kind: Ingress
