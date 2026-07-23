@@ -42,6 +42,26 @@ metadata:
   # http://server:2567 (same pattern as chesskernel).
   name: server
   namespace: pixelhub
+  labels: { app: server }
 spec:
   selector: { app: server }
-  ports: [{ port: 2567 }]
+  ports: [{ name: http, port: 2567 }]
+---
+# Prometheus scrapes /metrics once a minute: a handful of series, negligible
+# load. The release label is required by kube-prometheus-stack's selector.
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: pixelhub-server
+  namespace: pixelhub
+  labels:
+    release: monitoring
+spec:
+  selector:
+    matchLabels: { app: server }
+  endpoints:
+    - port: http
+      path: /metrics
+      interval: 60s
+  namespaceSelector:
+    matchNames: [pixelhub]
