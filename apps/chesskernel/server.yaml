@@ -55,6 +55,26 @@ metadata:
   # to http://server:3001 (see chesskernel docker/nginx/nginx.client.conf).
   name: server
   namespace: chesskernel
+  labels: { app: server }
 spec:
   selector: { app: server }
-  ports: [{ port: 3001 }]
+  ports: [{ name: http, port: 3001 }]
+---
+# Prometheus scrapes /metrics (excluded from the api prefix; nginx never
+# exposes it publicly). 60s, a handful of series.
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: chesskernel-server
+  namespace: chesskernel
+  labels:
+    release: monitoring
+spec:
+  selector:
+    matchLabels: { app: server }
+  endpoints:
+    - port: http
+      path: /metrics
+      interval: 60s
+  namespaceSelector:
+    matchNames: [chesskernel]
