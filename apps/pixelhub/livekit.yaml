@@ -32,6 +32,8 @@ spec:
     metadata:
       labels: { app: livekit }
     spec:
+      securityContext:
+        seccompProfile: { type: RuntimeDefault }
       # kubelet injects LIVEKIT_PORT=tcp://<clusterip>:7880 for the Service
       # named "livekit"; livekit-server parses that env as its port flag and
       # crashes. Service links are docker-era legacy, safe to disable.
@@ -39,6 +41,10 @@ spec:
       containers:
         - name: livekit
           image: livekit/livekit-server:v1.13.4
+          # No runAsNonRoot / drop-ALL here: livekit binds hostPorts for WebRTC
+          # media and must keep its default runtime. Escalation is still blocked.
+          securityContext:
+            allowPrivilegeEscalation: false
           args: [--config, /etc/livekit/config.yaml]
           env:
             - name: LIVEKIT_KEYS

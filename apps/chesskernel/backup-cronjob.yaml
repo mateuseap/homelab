@@ -16,9 +16,15 @@ spec:
       template:
         spec:
           restartPolicy: Never
+          securityContext:
+            seccompProfile: { type: RuntimeDefault }
           containers:
             - name: backup
               image: postgres:16-alpine
+              # No drop-ALL / runAsNonRoot: the job runs `apk add aws-cli`,
+              # which needs root inside the container. Escalation is still blocked.
+              securityContext:
+                allowPrivilegeEscalation: false
               command: [/bin/sh, -c]
               args:
                 - |
