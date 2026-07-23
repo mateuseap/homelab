@@ -19,7 +19,14 @@ spec:
           env:
             - name: NODE_ENV
               value: production
-            # TODO(M3): LIVEKIT_* env vars from a sealed secret when audio lands
+            - name: LIVEKIT_URL
+              value: wss://livekit.lab.mateuseap.com
+            - name: LIVEKIT_API_KEY
+              valueFrom:
+                secretKeyRef: { name: pixelhub-secrets, key: livekit-api-key }
+            - name: LIVEKIT_API_SECRET
+              valueFrom:
+                secretKeyRef: { name: pixelhub-secrets, key: livekit-api-secret }
           resources:
             requests: { cpu: 30m, memory: 100Mi }
             limits: { memory: 250Mi }

@@ -92,3 +92,9 @@ kubectl -n chesskernel rollout restart deploy/server deploy/client
 | No TLS cert | `kubectl describe certificate -A` — DNS must already resolve for HTTP-01 |
 | Node pressure | Grafana → Node Exporter dashboard; CPU throttling shows here first |
 | ArgoCD UI slow | It shares 1 vCPU with everything — normal during syncs |
+
+## pixelhub voice (LiveKit)
+
+- Secrets: seal `docs/examples/pixelhub-secrets.example.yaml` (same kubeseal flow as chesskernel) into `apps/pixelhub/sealed-secrets.yaml`. The `livekit-keys` entry is the combined `"key: secret"` string LIVEKIT_KEYS expects.
+- Network: signaling is wss on `livekit.lab.mateuseap.com` through Traefik; WebRTC media bypasses the ingress via hostPorts `7882/udp` (mux) and `7881/tcp` (fallback). A new machine must allow those ports.
+- Verify: `curl -s https://livekit.lab.mateuseap.com` returns LiveKit's OK page; livekit pod log shows "starting LiveKit server"; in the app, two browsers with voice enabled hear each other when avatars are adjacent.

@@ -1,0 +1,97 @@
+# Self-hosted LiveKit SFU for pixelhub proximity voice (audio-only).
+# Signaling (wss) rides the normal ingress; WebRTC media uses hostPorts
+# because Traefik cannot proxy arbitrary UDP: 7882/udp (mux) + 7881/tcp
+# (fallback) directly on the node.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: livekit-config
+  namespace: pixelhub
+data:
+  config.yaml: |
+    port: 7880
+    rtc:
+      udp_port: 7882
+      tcp_port: 7881
+      use_external_ip: true
+    logging:
+      level: info
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: livekit
+  namespace: pixelhub
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: livekit }
+  strategy: { type: Recreate } # hostPorts: two pods cannot coexist
+  template:
+    metadata:
+      labels: { app: livekit }
+    spec:
+      containers:
+        - name: livekit
+          image: livekit/livekit-server:v1.7.2
+          args: [--config, /etc/livekit/config.yaml]
+          env:
+            - name: LIVEKIT_KEYS
+              valueFrom:
+                secretKeyRef: { name: pixelhub-secrets, key: livekit-keys }
+          ports:
+            - containerPort: 7880 # ws signaling (behind ingress)
+            - containerPort: 7882
+              hostPort: 7882
+              protocol: UDP # WebRTC media, single mux port
+            - containerPort: 7881
+              hostPort: 7881
+              protocol: TCP # WebRTC TCP fallback
+          volumeMounts:
+            - name: config
+              mountPath: /etc/livekit
+              readOnly: true
+          resources:
+            requests: { cpu: 30m, memory: 100Mi }
+            limits: { memory: 300Mi }
+          readinessProbe:
+            tcpSocket: { port: 7880 }
+            initialDelaySeconds: 5
+            periodSeconds: 10
+      volumes:
+        - name: config
+          configMap:
+            name: livekit-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: livekit
+  namespace: pixelhub
+spec:
+  selector: { app: livekit }
+  ports: [{ port: 7880 }]
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: livekit
+  namespace: pixelhub
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+spec:
+  ingressClassName: traefik
+  rules:
+    - host: livekit.lab.mateuseap.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: livekit
+                port:
+                  number: 7880
+  tls:
+    - hosts: [livekit.lab.mateuseap.com]
+      secretName: livekit-tls
