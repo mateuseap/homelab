@@ -26,7 +26,7 @@ Install the CLI once on your laptop: `brew install kubeseal` /
 [releases](https://github.com/bitnami-labs/sealed-secrets/releases).
 
 ```bash
-cp apps/chesskernel/secrets.example.yaml /tmp/secrets.yaml
+cp docs/examples/chesskernel-secrets.example.yaml /tmp/secrets.yaml
 # edit /tmp/secrets.yaml with real values
 kubeseal --controller-namespace kube-system --format yaml \
   < /tmp/secrets.yaml > apps/chesskernel/sealed-secrets.yaml
