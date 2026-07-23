@@ -1,0 +1,40 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: server
+  namespace: pixelhub
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: server }
+  template:
+    metadata:
+      labels: { app: server }
+    spec:
+      containers:
+        - name: server
+          image: ghcr.io/mateuseap/pixelhub-server:latest
+          imagePullPolicy: Always
+          ports: [{ containerPort: 2567 }]
+          env:
+            - name: NODE_ENV
+              value: production
+            # TODO(M3): LIVEKIT_* env vars from a sealed secret when audio lands
+          resources:
+            requests: { cpu: 30m, memory: 100Mi }
+            limits: { memory: 250Mi }
+          readinessProbe:
+            httpGet: { path: /health, port: 2567 }
+            initialDelaySeconds: 5
+            periodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  # Named `server` on purpose: the client nginx proxies /colyseus to
+  # http://server:2567 (same pattern as chesskernel).
+  name: server
+  namespace: pixelhub
+spec:
+  selector: { app: server }
+  ports: [{ port: 2567 }]

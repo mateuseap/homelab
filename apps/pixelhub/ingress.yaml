@@ -1,0 +1,23 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: pixelhub
+  namespace: pixelhub
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+spec:
+  ingressClassName: traefik
+  rules:
+    - host: pixelhub.lab.mateuseap.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: client
+                port:
+                  number: 80
+  tls:
+    - hosts: [pixelhub.lab.mateuseap.com]
+      secretName: pixelhub-tls
