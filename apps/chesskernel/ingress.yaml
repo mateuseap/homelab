@@ -1,4 +1,7 @@
-# Two hostnames, one app: the lab subdomain plus chesskernel's own domain.
+# Two Ingress objects on purpose: Traefik drops an ingress's whole TLS config
+# if ANY referenced secret is missing. chess.lab's cert can't issue until the
+# *.lab.mateuseap.com DNS wildcard exists — keeping it separate means the
+# production domain never waits on it.
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
@@ -9,7 +12,7 @@ metadata:
 spec:
   ingressClassName: traefik
   rules:
-    - host: chess.lab.mateuseap.com
+    - host: chesskernel.com
       http: &routes
         paths:
           - path: /
@@ -19,12 +22,32 @@ spec:
                 name: client
                 port:
                   number: 80
-    - host: chesskernel.com
-      http: *routes
     - host: www.chesskernel.com
       http: *routes
   tls:
-    - hosts: [chess.lab.mateuseap.com]
-      secretName: chesskernel-lab-tls
     - hosts: [chesskernel.com, www.chesskernel.com]
       secretName: chesskernel-own-tls
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: chesskernel-lab
+  namespace: chesskernel
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+spec:
+  ingressClassName: traefik
+  rules:
+    - host: chess.lab.mateuseap.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: client
+                port:
+                  number: 80
+  tls:
+    - hosts: [chess.lab.mateuseap.com]
+      secretName: chesskernel-lab-tls
