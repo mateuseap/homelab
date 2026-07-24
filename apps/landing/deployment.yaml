@@ -1,0 +1,29 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: landing
+  namespace: landing
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: landing }
+  template:
+    metadata:
+      labels: { app: landing }
+    spec:
+      securityContext:
+        seccompProfile: { type: RuntimeDefault }
+      containers:
+        - name: landing
+          image: ghcr.io/mateuseap/homelab-landing:latest
+          imagePullPolicy: Always
+          # nginx needs to bind port 80, so no drop-ALL here; escalation blocked.
+          securityContext:
+            allowPrivilegeEscalation: false
+          ports: [{ containerPort: 80 }]
+          resources:
+            requests: { cpu: 10m, memory: 16Mi }
+            limits: { memory: 64Mi }
+          readinessProbe:
+            httpGet: { path: /, port: 80 }
+            periodSeconds: 15
