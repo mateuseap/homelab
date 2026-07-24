@@ -1,0 +1,26 @@
+# homelab.mateuseap.com is a direct subdomain (not under the *.lab wildcard),
+# so it needs its own A record at the DNS provider. cert-manager issues the
+# certificate over HTTP-01 once that record resolves to the node.
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: landing
+  namespace: landing
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+spec:
+  ingressClassName: traefik
+  rules:
+    - host: homelab.mateuseap.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: landing
+                port:
+                  number: 80
+  tls:
+    - hosts: [homelab.mateuseap.com]
+      secretName: landing-tls
