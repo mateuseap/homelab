@@ -44,6 +44,7 @@ flowchart LR
 | `argo.lab.mateuseap.com` | ArgoCD server | TLS at Traefik; ArgoCD runs insecure internally |
 | `grafana.lab.mateuseap.com` | Grafana | Ingress defined in the monitoring chart values |
 | `livekit.lab.mateuseap.com` | LiveKit signaling | `wss` signaling only; media bypasses Traefik (see below) |
+| `homelab.mateuseap.com` | Landing page (apps/landing) | Own A record, not under the `*.lab` wildcard; static showcase served by the cluster |
 
 ### Why ChessKernel has two Ingress objects
 
