@@ -28,6 +28,7 @@ Hand-configured servers rot: undocumented tweaks pile up, migrations become arch
 
 |  |  |
 |--|--|
+| 🏗 **[HomeLab Landing](https://github.com/mateuseap/homelab-landing)** | The public showcase for the HomeLab GitOps platform. Vanilla static site. |
 | ♟️ **[ChessKernel](https://github.com/mateuseap/chesskernel)** | Chess platform at [chesskernel.com](https://chesskernel.com) |
 | 👾 **[PixelHub](https://github.com/mateuseap/pixelhub)** | Gather-style 2D world with proximity chat and voice |
 | 🛰 **ArgoCD** | GitOps engine and live app dashboard (`argo.lab.mateuseap.com`) |
