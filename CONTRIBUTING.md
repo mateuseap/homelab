@@ -11,9 +11,14 @@ This repo is the single source of truth for a live single-node cluster. ArgoCD w
 
 ## Workflow
 
-1. Branch from `main`:
+This repo, like the other projects, uses a `develop` to `main` flow. Feature
+branches come off `develop`, PRs target `develop`, and a `develop` to `main`
+release ships a batch. Merging to `main` is what deploys, so `main` stays
+production and `develop` is the staging line.
+
+1. Branch from `develop`:
    ```bash
-   git checkout main && git pull
+   git checkout develop && git pull
    git checkout -b feat/<short-name>   # or fix/, docs/, chore/
    ```
 2. Make the change. Keep manifests small and one concern per file (match the existing `apps/` and `platform/` layout). Set resource `requests` and `limits` on every container; the node is 1 vCPU / 4 GB.
@@ -22,12 +27,13 @@ This repo is the single source of truth for a live single-node cluster. ArgoCD w
    kubectl apply --dry-run=client -f <changed-file>   # schema sanity
    ```
 4. Commit using [Conventional Commits](https://www.conventionalcommits.org/) (`feat:`, `fix:`, `docs:`, `chore:`, `refactor:`).
-5. Push and open a PR:
+5. Push and open a PR into `develop`:
    ```bash
    git push -u origin feat/<short-name>
-   gh pr create --assignee mateuseap
+   gh pr create --base develop --assignee mateuseap
    ```
-   Every PR is assigned to `mateuseap`. Do not merge without review; a merge deploys.
+   Every PR is assigned to `mateuseap`. Do not merge without review.
+6. Release: when a batch on `develop` is ready, open a `develop` to `main` PR and merge it. ArgoCD reconciles the cluster within a minute or two.
 
 ## Secrets: always seal
 
