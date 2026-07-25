@@ -1,0 +1,60 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mixtape
+  namespace: mixtape
+spec:
+  replicas: 1
+  strategy: { type: Recreate }
+  selector:
+    matchLabels: { app: mixtape }
+  template:
+    metadata:
+      labels: { app: mixtape }
+    spec:
+      securityContext:
+        seccompProfile: { type: RuntimeDefault }
+      containers:
+        - name: mixtape
+          image: ghcr.io/mateuseap/mixtape:latest
+          imagePullPolicy: Always
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities: { drop: [ALL] }
+          ports: [{ containerPort: 3000 }]
+          env:
+            - name: NODE_ENV
+              value: production
+            - name: DATA_DIR
+              value: /data
+            - name: PORT
+              value: "3000"
+            - name: SESSION_SECRET
+              valueFrom:
+                secretKeyRef: { name: mixtape-secrets, key: session-secret }
+            - name: PASSWORD_HASH
+              valueFrom:
+                secretKeyRef: { name: mixtape-secrets, key: password-hash }
+          resources:
+            requests: { cpu: 30m, memory: 100Mi }
+            limits: { memory: 250Mi }
+          readinessProbe:
+            httpGet: { path: /api/health, port: 3000 }
+            initialDelaySeconds: 5
+          volumeMounts:
+            - name: data
+              mountPath: /data
+      volumes:
+        - name: data
+          persistentVolumeClaim: { claimName: mixtape-data }
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: mixtape-data
+  namespace: mixtape
+spec:
+  accessModes: [ReadWriteOnce]
+  storageClassName: local-path
+  resources:
+    requests: { storage: 5Gi }
