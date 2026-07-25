@@ -29,12 +29,6 @@ spec:
               value: /data
             - name: PORT
               value: "3000"
-            - name: SESSION_SECRET
-              valueFrom:
-                secretKeyRef: { name: mixtape-secrets, key: session-secret }
-            - name: PASSWORD_HASH
-              valueFrom:
-                secretKeyRef: { name: mixtape-secrets, key: password-hash }
           resources:
             requests: { cpu: 30m, memory: 100Mi }
             limits: { memory: 250Mi }

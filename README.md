@@ -31,7 +31,7 @@ Hand-configured servers rot: undocumented tweaks pile up, migrations become arch
 | 🏗 **[HomeLab Landing](https://github.com/mateuseap/homelab-landing)** | The public showcase for the HomeLab GitOps platform. Vanilla static site. |
 | ♟️ **[ChessKernel](https://github.com/mateuseap/chesskernel)** | Chess platform at [chesskernel.com](https://chesskernel.com) |
 | 👾 **[PixelHub](https://github.com/mateuseap/pixelhub)** | Gather-style 2D world with proximity chat and voice |
-| 🎵 **[Mixtape](https://github.com/mateuseap/mixtape)** | Password-gated MP3 library with a retro player UI |
+| 🎵 **[Mixtape](https://github.com/mateuseap/mixtape)** | Open MP3 library with an interactive 3D player UI |
 | 🛰 **ArgoCD** | GitOps engine and live app dashboard (`argo.lab.mateuseap.com`) |
 | 📈 **Grafana + Prometheus** | Metrics, trimmed for a 1 vCPU node (`grafana.lab.mateuseap.com`) |
 | 🔐 **cert-manager** | Automatic Let's Encrypt TLS for every host |
