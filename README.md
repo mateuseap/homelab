@@ -9,8 +9,6 @@ GitOps · k3s · ArgoCD · Reproducible in ~30 minutes
 [![stars](https://badgen.net/github/stars/mateuseap/homelab)](https://github.com/mateuseap/homelab/stargazers)
 [![visitors](https://visitor-badge.laobi.icu/badge?page_id=mateuseap.homelab)](https://github.com/mateuseap/homelab)
 
-<br />
-
 </div>
 
 ---
