@@ -34,9 +34,9 @@ metadata:
   annotations:
     argocd.argoproj.io/sync-options: Prune=false
     homelab.mateuseap.com/description: >-
-      Mixtape: open MP3 library with an interactive 3D player UI. Single
-      Node/Express service, PVC-backed storage. Public at
-      mixtape.lab.mateuseap.com.
+      Mixtape: open library of interactive 3D sound equipment (MP3 click
+      wheel, CD player). Single Node/Express service, PVC-backed storage.
+      Public at mixtape.lab.mateuseap.com.
   labels:
     app.kubernetes.io/part-of: homelab
 ---
