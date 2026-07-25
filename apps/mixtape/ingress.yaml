@@ -1,0 +1,22 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: mixtape
+  namespace: mixtape
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+spec:
+  ingressClassName: traefik
+  rules:
+    - host: mixtape.lab.mateuseap.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: mixtape
+                port: { number: 80 }
+  tls:
+    - hosts: [mixtape.lab.mateuseap.com]
+      secretName: mixtape-tls

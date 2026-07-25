@@ -30,6 +30,19 @@ metadata:
 apiVersion: v1
 kind: Namespace
 metadata:
+  name: mixtape
+  annotations:
+    argocd.argoproj.io/sync-options: Prune=false
+    homelab.mateuseap.com/description: >-
+      Mixtape: password-gated MP3 library with a retro player UI. Single
+      Node/Express service, PVC-backed storage. Public at
+      mixtape.lab.mateuseap.com.
+  labels:
+    app.kubernetes.io/part-of: homelab
+---
+apiVersion: v1
+kind: Namespace
+metadata:
   name: monitoring
   annotations:
     argocd.argoproj.io/sync-options: Prune=false

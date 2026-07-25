@@ -31,6 +31,7 @@ Hand-configured servers rot: undocumented tweaks pile up, migrations become arch
 | 🏗 **[HomeLab Landing](https://github.com/mateuseap/homelab-landing)** | The public showcase for the HomeLab GitOps platform. Vanilla static site. |
 | ♟️ **[ChessKernel](https://github.com/mateuseap/chesskernel)** | Chess platform at [chesskernel.com](https://chesskernel.com) |
 | 👾 **[PixelHub](https://github.com/mateuseap/pixelhub)** | Gather-style 2D world with proximity chat and voice |
+| 🎵 **[Mixtape](https://github.com/mateuseap/mixtape)** | Password-gated MP3 library with a retro player UI |
 | 🛰 **ArgoCD** | GitOps engine and live app dashboard (`argo.lab.mateuseap.com`) |
 | 📈 **Grafana + Prometheus** | Metrics, trimmed for a 1 vCPU node (`grafana.lab.mateuseap.com`) |
 | 🔐 **cert-manager** | Automatic Let's Encrypt TLS for every host |
@@ -51,6 +52,7 @@ flowchart TB
         seal["sealed-secrets<br/>decrypts SealedSecrets in-cluster"]
         chess["ChessKernel<br/>client, server, postgres, redis"]
         pixel["PixelHub<br/>client, server, LiveKit"]
+        mix["Mixtape<br/>server, storage"]
         mon["Prometheus + Grafana<br/>curated Homelab Overview dashboard"]
         cron["CronJob<br/>nightly pg_dump"]
     end
@@ -61,6 +63,7 @@ flowchart TB
     gh -->|poll| argo
     argo --> chess
     argo --> pixel
+    argo --> mix
     argo --> mon
     argo --> seal
     argo --> cm
@@ -68,10 +71,12 @@ flowchart TB
     users -->|HTTPS| traefik
     traefik --> chess
     traefik --> pixel
+    traefik --> mix
     traefik --> argo
     traefik --> mon
     ghcr -.->|image pulls| chess
     ghcr -.->|image pulls| pixel
+    ghcr -.->|image pulls| mix
     cron --> r2
     seal -.-> chess
 ```
