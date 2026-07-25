@@ -160,7 +160,7 @@ Credentials come from the sealed `r2-backup-credentials`. Restore is a manual `g
 | `monitoring` | Prometheus, Grafana, exporters (`grafana.lab.mateuseap.com`) |
 | `chesskernel` | Client, NestJS server, PostgreSQL, Redis, backup CronJob |
 | `pixelhub` | Client, Colyseus server, LiveKit SFU |
-| `mixtape` | Single node/express service, PVC-backed MP3 storage |
+| `mixtape` | Single node/express service, PVC-backed storage, multiple 3D sound-equipment UIs |
 
 Each application and platform namespace carries a `homelab.mateuseap.com/description` annotation and `argocd.argoproj.io/sync-options: Prune=false`, so removing a namespace declaration never deletes a running namespace and its data (`platform/config/namespaces.yaml`).
 
