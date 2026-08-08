@@ -1,4 +1,4 @@
-# 9Router on homelab — Design
+# 9Router on homelab: Design
 
 ## Why
 
@@ -8,12 +8,12 @@ Claude Code sessions die on rate limits mid-work. [9Router](https://github.com/d
 
 - **Provider scope:** include the user's own subscription OAuth tokens (Claude Code, etc.), not just free/no-auth providers. Accepted ToS/ban risk knowingly.
 - **Primary goal:** fallback on rate limits, not cost optimization or multi-tool convenience.
-- **Exposure:** standard pattern — public Ingress + TLS, gated by `REQUIRE_API_KEY` bearer auth only. No extra IP allowlisting.
-- **Monitoring/backup:** out of scope for v1. No documented `/metrics` endpoint upstream. 9Router writes its own rotating backups under `DATA_DIR/db/backups`, which lives on the PVC — sufficient for v1.
+- **Exposure:** standard pattern: public Ingress + TLS, gated by `REQUIRE_API_KEY` bearer auth only. No extra IP allowlisting.
+- **Monitoring/backup:** out of scope for v1. No documented `/metrics` endpoint upstream. 9Router writes its own rotating backups under `DATA_DIR/db/backups`, which lives on the PVC. This is sufficient for v1.
 
 ## Security note (flagged to user, accepted)
 
-9Router's OAuth-token-as-backend model uses subscription auth outside each vendor's official API surface — plausible ToS violation / account-flagging risk for Anthropic and other connected providers. The PVC holds live OAuth tokens, issued API keys, and usage history — it is the most sensitive volume on the cluster after chesskernel's Postgres. Cloud Sync (9Router's own telemetry/config-sync feature, default `CLOUD_URL=https://9router.com`) is left disabled — nothing opts in via the dashboard, so config/tokens stay on the node.
+9Router's OAuth-token-as-backend model uses subscription auth outside each vendor's official API surface, a plausible ToS violation / account-flagging risk for Anthropic and other connected providers. The PVC holds live OAuth tokens, issued API keys, and usage history. It is the most sensitive volume on the cluster after chesskernel's Postgres. Cloud Sync (9Router's own telemetry/config-sync feature, default `CLOUD_URL=https://9router.com`) is left disabled. Nothing opts in via the dashboard, so config/tokens stay on the node.
 
 ## Architecture
 
@@ -32,8 +32,8 @@ docs/examples/9router-secrets.example.yaml   # template, gitignored when filled
 
 ### Deployment
 
-- Image: `decolua/9router:latest` (Docker Hub, third-party — **deviation** from the GHCR-built-by-CI convention every other app follows here, since 9Router isn't one of this user's own repos; no `:sha` pin available upstream, comment this in the manifest).
-- `strategy: Recreate` — single-writer SQLite, same reasoning as `apps/chesskernel/redis.yaml`.
+- Image: `decolua/9router:latest` (Docker Hub, third-party: a **deviation** from the GHCR-built-by-CI convention every other app follows here, since 9Router isn't one of this user's own repos; no `:sha` pin available upstream, comment this in the manifest).
+- `strategy: Recreate` (single-writer SQLite, same reasoning as `apps/chesskernel/redis.yaml`).
 - Port `20128`.
 - Env:
   | Var | Value | Why |
@@ -45,13 +45,13 @@ docs/examples/9router-secrets.example.yaml   # template, gitignored when filled
   | `AUTH_COOKIE_SECURE` | `true` | dashboard sits behind TLS at Traefik |
   | `ENABLE_REQUEST_LOGS` | `false` | avoid prompts/keys landing in pod logs |
   | `JWT_SECRET`, `INITIAL_PASSWORD`, `API_KEY_SECRET`, `MACHINE_ID_SALT` | from sealed Secret | required, random-generated |
-- Resources: `requests: {cpu: 30m, memory: 100Mi}`, `limits: {memory: 250Mi}` — same ballpark as `mixtape` (comparable single-instance Node service).
+- Resources: `requests: {cpu: 30m, memory: 100Mi}`, `limits: {memory: 250Mi}` match the same ballpark as `mixtape` (comparable single-instance Node service).
 - Readiness probe: verify 9Router's actual health path during implementation (not documented upstream); fall back to a TCP socket check on 20128 if none exists.
 - PVC `9router-data`, 5Gi, `local-path` storage class, mounted at `/data`.
 
 ### Service
 
-ClusterIP, `port: 80 -> targetPort: 20128`, `selector: {app: 9router}` — matches the `mixtape` service shape.
+ClusterIP, `port: 80 -> targetPort: 20128`, `selector: {app: 9router}` matches the `mixtape` service shape.
 
 ### Ingress
 
@@ -59,15 +59,15 @@ ClusterIP, `port: 80 -> targetPort: 20128`, `selector: {app: 9router}` — match
 
 ### Sealed secret
 
-`JWT_SECRET`, `INITIAL_PASSWORD`, `API_KEY_SECRET`, `MACHINE_ID_SALT` — random values generated at implementation time, sealed via `kubeseal` following the plaintext-in-`/tmp`-then-`shred` flow documented in `docs/operations/adding-an-app.md` step 3.
+`JWT_SECRET`, `INITIAL_PASSWORD`, `API_KEY_SECRET`, `MACHINE_ID_SALT`: random values generated at implementation time, sealed via `kubeseal` following the plaintext-in-`/tmp`-then-`shred` flow documented in `docs/operations/adding-an-app.md` step 3.
 
 ### ArgoCD Application
 
-Wave 2 (after cert-manager/sealed-secrets/monitoring), `path: apps/9router`, `namespace: 9router`, `automated: {prune: true, selfHeal: true}`, `syncOptions: [CreateNamespace=true]` — copy of `argocd/app-mixtape.yaml`.
+Wave 2 (after cert-manager/sealed-secrets/monitoring), `path: apps/9router`, `namespace: 9router`, `automated: {prune: true, selfHeal: true}`, `syncOptions: [CreateNamespace=true]`. Copy from `argocd/app-mixtape.yaml`.
 
 ### Namespace registration
 
-Add a block to `platform/config/namespaces.yaml`: `argocd.argoproj.io/sync-options: Prune=false`, `homelab.mateuseap.com/description` summarizing what it is and that it holds subscription OAuth tokens, `app.kubernetes.io/part-of: homelab` label — matches the existing five blocks.
+Add a block to `platform/config/namespaces.yaml`: `argocd.argoproj.io/sync-options: Prune=false`, `homelab.mateuseap.com/description` summarizing what it is and that it holds subscription OAuth tokens, `app.kubernetes.io/part-of: homelab` label and match the existing five blocks.
 
 ## Data flow
 
@@ -84,12 +84,12 @@ Add a block to `platform/config/namespaces.yaml`: `argocd.argoproj.io/sync-optio
 ## Testing / validation
 
 1. `argocd app sync 9router` (or wait for auto-sync after merge).
-2. `kubectl -n 9router get pods` — Running.
-3. `kubectl -n 9router get certificate` — `Ready: True`.
-4. `curl -I https://9router.lab.mateuseap.com` — 200/dashboard reachable.
+2. `kubectl -n 9router get pods` should show Running.
+3. `kubectl -n 9router get certificate` should show `Ready: True`.
+4. `curl -I https://9router.lab.mateuseap.com` should return 200/dashboard reachable.
 5. Log into dashboard with `INITIAL_PASSWORD`, connect one provider (start with Claude Code OAuth), issue a routing API key.
 6. Point local Claude Code CLI at the router (`ANTHROPIC_BASE_URL` + issued key) and confirm a request round-trips.
-7. Confirm Grafana/ArgoCD stay green — no CPU/memory pressure regression on the other three apps from the new pod.
+7. Confirm Grafana/ArgoCD stay green with no CPU/memory pressure regression on the other three apps from the new pod.
 
 ## Out of scope (v1)
 
