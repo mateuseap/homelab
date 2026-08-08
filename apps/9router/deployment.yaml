@@ -1,0 +1,75 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: 9router
+  namespace: 9router
+spec:
+  replicas: 1
+  strategy: { type: Recreate }
+  selector:
+    matchLabels: { app: 9router }
+  template:
+    metadata:
+      labels: { app: 9router }
+    spec:
+      securityContext:
+        seccompProfile: { type: RuntimeDefault }
+      containers:
+        - name: 9router
+          # Third-party image on Docker Hub, not built by this user's own
+          # CI, so it does not follow the ghcr.io/mateuseap/<name>:latest
+          # convention the other apps use. No upstream :sha tag exists.
+          image: decolua/9router:latest
+          imagePullPolicy: Always
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities: { drop: [ALL] }
+          ports: [{ containerPort: 20128 }]
+          env:
+            - name: NODE_ENV
+              value: production
+            - name: DATA_DIR
+              value: /data
+            - name: PORT
+              value: "20128"
+            - name: REQUIRE_API_KEY
+              value: "true"
+            - name: AUTH_COOKIE_SECURE
+              value: "true"
+            - name: ENABLE_REQUEST_LOGS
+              value: "false"
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef: { name: 9router-secrets, key: jwt-secret }
+            - name: INITIAL_PASSWORD
+              valueFrom:
+                secretKeyRef: { name: 9router-secrets, key: initial-password }
+            - name: API_KEY_SECRET
+              valueFrom:
+                secretKeyRef: { name: 9router-secrets, key: api-key-secret }
+            - name: MACHINE_ID_SALT
+              valueFrom:
+                secretKeyRef: { name: 9router-secrets, key: machine-id-salt }
+          resources:
+            requests: { cpu: 30m, memory: 100Mi }
+            limits: { memory: 250Mi }
+          readinessProbe:
+            tcpSocket: { port: 20128 }
+            initialDelaySeconds: 5
+          volumeMounts:
+            - name: data
+              mountPath: /data
+      volumes:
+        - name: data
+          persistentVolumeClaim: { claimName: 9router-data }
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: 9router-data
+  namespace: 9router
+spec:
+  accessModes: [ReadWriteOnce]
+  storageClassName: local-path
+  resources:
+    requests: { storage: 5Gi }
