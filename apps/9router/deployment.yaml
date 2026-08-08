@@ -28,7 +28,11 @@ spec:
           imagePullPolicy: Always
           securityContext:
             allowPrivilegeEscalation: false
-            capabilities: { drop: [ALL] }
+            # decolua/9router's entrypoint runs as root and uses su-exec to
+            # drop to a lower-privileged user, which needs SETUID/SETGID.
+            # Dropping ALL without adding these back leaves the container
+            # crashlooping on "su-exec: setgroups: Operation not permitted".
+            capabilities: { drop: [ALL], add: [SETUID, SETGID] }
           ports: [{ containerPort: 20128 }]
           env:
             - name: NODE_ENV
