@@ -15,7 +15,7 @@ spec:
             pathType: Prefix
             backend:
               service:
-                name: 9router
+                name: router
                 port: { number: 80 }
   tls:
     - hosts: [9router.lab.mateuseap.com]
