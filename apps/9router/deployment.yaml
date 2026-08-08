@@ -18,7 +18,12 @@ spec:
         - name: 9router
           # Third-party image on Docker Hub, not built by this user's own
           # CI, so it does not follow the ghcr.io/mateuseap/<name>:latest
-          # convention the other apps use. No upstream :sha tag exists.
+          # convention the other apps use. An immutable digest pin
+          # (decolua/9router@sha256:<digest>) is available upstream, but
+          # this deployment deliberately tracks :latest to pick up
+          # upstream fixes automatically, accepting the supply-chain
+          # trust tradeoff since this is a third-party image, not one
+          # built by this user's own CI.
           image: decolua/9router:latest
           imagePullPolicy: Always
           securityContext:

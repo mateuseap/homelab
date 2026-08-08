@@ -45,6 +45,7 @@ flowchart LR
 | `grafana.lab.mateuseap.com` | Grafana | Ingress defined in the monitoring chart values |
 | `livekit.lab.mateuseap.com` | LiveKit signaling | `wss` signaling only; media bypasses Traefik (see below) |
 | `mixtape.lab.mateuseap.com` | Mixtape service | `mixtape-tls` |
+| `9router.lab.mateuseap.com` | 9Router service | `9router-tls`; holds subscription OAuth tokens |
 | `homelab.mateuseap.com` | Landing page (apps/landing) | Own A record, not under the `*.lab` wildcard; static showcase served by the cluster |
 
 ### Why ChessKernel has two Ingress objects

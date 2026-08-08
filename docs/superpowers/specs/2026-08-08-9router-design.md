@@ -67,7 +67,7 @@ Wave 2 (after cert-manager/sealed-secrets/monitoring), `path: apps/9router`, `na
 
 ### Namespace registration
 
-Add a block to `platform/config/namespaces.yaml`: `argocd.argoproj.io/sync-options: Prune=false`, `homelab.mateuseap.com/description` summarizing what it is and that it holds subscription OAuth tokens, `app.kubernetes.io/part-of: homelab` label and match the existing five blocks.
+Add a block to `platform/config/namespaces.yaml`: `argocd.argoproj.io/sync-options: Prune=false`, `homelab.mateuseap.com/description` summarizing what it is and that it holds subscription OAuth tokens, `app.kubernetes.io/part-of: homelab` label, matching the existing blocks in that file.
 
 ## Data flow
 
