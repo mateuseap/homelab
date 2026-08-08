@@ -76,3 +76,16 @@ metadata:
       keeps this cluster matching it. UI at argo.lab.mateuseap.com.
   labels:
     app.kubernetes.io/part-of: homelab
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: 9router
+  annotations:
+    argocd.argoproj.io/sync-options: Prune=false
+    homelab.mateuseap.com/description: >-
+      9Router: self-hosted AI gateway providing rate-limit fallback for
+      Claude Code across 40+ providers. Holds subscription OAuth tokens and
+      issued API keys on its PVC. Public at 9router.lab.mateuseap.com.
+  labels:
+    app.kubernetes.io/part-of: homelab

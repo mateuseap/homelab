@@ -1,6 +1,6 @@
 # Platform Overview
 
-This homelab is one VPS (1 vCPU, 4 GB, 179.197.71.43) running single-node k3s, declared entirely in this git repo. ArgoCD watches the repo and makes the cluster match it. Three applications run on top: ChessKernel, PixelHub, and Mixtape.
+This homelab is one VPS (1 vCPU, 4 GB, 179.197.71.43) running single-node k3s, declared entirely in this git repo. ArgoCD watches the repo and makes the cluster match it. Four applications run on top: ChessKernel, PixelHub, Mixtape, and 9Router.
 
 For the decisions behind this design, see the [ADRs](../adr/). For the original design note, see [docs/specs](../specs/). For step-by-step operations, see the [runbook](../RUNBOOK.md).
 
@@ -161,6 +161,7 @@ Credentials come from the sealed `r2-backup-credentials`. Restore is a manual `g
 | `chesskernel` | Client, NestJS server, PostgreSQL, Redis, backup CronJob |
 | `pixelhub` | Client, Colyseus server, LiveKit SFU |
 | `mixtape` | Single node/express service, PVC-backed storage, multiple 3D sound-equipment UIs |
+| `9router` | Self-hosted AI gateway (Deployment + PVC); holds subscription OAuth tokens on its PVC |
 
 Each application and platform namespace carries a `homelab.mateuseap.com/description` annotation and `argocd.argoproj.io/sync-options: Prune=false`, so removing a namespace declaration never deletes a running namespace and its data (`platform/config/namespaces.yaml`).
 
