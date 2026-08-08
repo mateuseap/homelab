@@ -1,0 +1,22 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: 9router
+  namespace: 9router
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+spec:
+  ingressClassName: traefik
+  rules:
+    - host: 9router.lab.mateuseap.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: 9router
+                port: { number: 80 }
+  tls:
+    - hosts: [9router.lab.mateuseap.com]
+      secretName: 9router-tls
