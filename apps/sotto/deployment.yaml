@@ -16,11 +16,17 @@ spec:
         seccompProfile: { type: RuntimeDefault }
       containers:
         - name: sotto
-          # Built from github.com/mateuseap/sotto. The publish workflow is
-          # staged under docs/ci/ in that repo and is not active yet, so this
-          # image was imported into the node's containerd directly. Once the
-          # workflow runs, imagePullPolicy Always picks up the pushed tag.
-          image: ghcr.io/mateuseap/sotto:latest
+          # Built from github.com/mateuseap/sotto and imported straight into
+          # the node's containerd, because the publish workflow is staged
+          # under docs/ci/ in that repo and cannot run until a token with the
+          # workflow scope pushes it into .github/workflows/.
+          #
+          # The tag is deliberately not :latest. k3s treats a :latest tag as
+          # mutable and tries to pull it even under IfNotPresent, which fails
+          # against a private GHCR package with no pull secret. A fixed tag
+          # resolves locally. Switch this to :latest with imagePullPolicy
+          # Always once the workflow publishes to the registry.
+          image: ghcr.io/mateuseap/sotto:m1
           imagePullPolicy: IfNotPresent
           securityContext:
             allowPrivilegeEscalation: false
