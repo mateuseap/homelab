@@ -1,0 +1,56 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sotto
+  namespace: sotto
+spec:
+  replicas: 1
+  strategy: { type: Recreate }
+  selector:
+    matchLabels: { app: sotto }
+  template:
+    metadata:
+      labels: { app: sotto }
+    spec:
+      securityContext:
+        seccompProfile: { type: RuntimeDefault }
+      containers:
+        - name: sotto
+          # Built from github.com/mateuseap/sotto. The publish workflow is
+          # staged under docs/ci/ in that repo and is not active yet, so this
+          # image was imported into the node's containerd directly. Once the
+          # workflow runs, imagePullPolicy Always picks up the pushed tag.
+          image: ghcr.io/mateuseap/sotto:latest
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities: { drop: [ALL] }
+          ports: [{ containerPort: 3001 }]
+          env:
+            - name: NODE_ENV
+              value: production
+            - name: PORT
+              value: "3001"
+            - name: ALLOWED_ORIGINS
+              value: https://sotto.lab.mateuseap.com
+            # Each live session holds a paid upstream transcription stream, so
+            # the cap is the backstop that keeps one caller from exhausting
+            # both the credit and this single vCPU node.
+            - name: MAX_SESSIONS
+              value: "5"
+            - name: DEEPGRAM_API_KEY
+              valueFrom:
+                secretKeyRef: { name: sotto-secrets, key: deepgram-api-key }
+            - name: SESSION_TOKEN
+              valueFrom:
+                secretKeyRef: { name: sotto-secrets, key: session-token }
+          resources:
+            requests: { cpu: 50m, memory: 120Mi }
+            limits: { memory: 300Mi }
+          readinessProbe:
+            httpGet: { path: /api/health, port: 3001 }
+            initialDelaySeconds: 5
+          livenessProbe:
+            httpGet: { path: /api/health, port: 3001 }
+            initialDelaySeconds: 20
+            periodSeconds: 30
