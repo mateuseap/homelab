@@ -89,3 +89,16 @@ metadata:
       issued API keys on its PVC. Public at 9router.lab.mateuseap.com.
   labels:
     app.kubernetes.io/part-of: homelab
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: sotto
+  annotations:
+    argocd.argoproj.io/sync-options: Prune=false
+    homelab.mateuseap.com/description: >-
+      Sotto: AI meeting copilot. Captures a browser tab or screen, streams the
+      audio to a speech engine, and renders a live transcript. Public at
+      sotto.lab.mateuseap.com, gated by a shared session token.
+  labels:
+    app.kubernetes.io/part-of: homelab
