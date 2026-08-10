@@ -1,33 +1,26 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: sotto
+  name: server
   namespace: sotto
 spec:
   replicas: 1
+  # A live session is a WebSocket holding an open upstream transcription
+  # stream. Rolling a second pod alongside the old one would double the
+  # concurrent stream count against a metered API, so replace instead.
   strategy: { type: Recreate }
   selector:
-    matchLabels: { app: sotto }
+    matchLabels: { app: server }
   template:
     metadata:
-      labels: { app: sotto }
+      labels: { app: server }
     spec:
       securityContext:
         seccompProfile: { type: RuntimeDefault }
       containers:
-        - name: sotto
-          # Built from github.com/mateuseap/sotto and imported straight into
-          # the node's containerd, because the publish workflow is staged
-          # under docs/ci/ in that repo and cannot run until a token with the
-          # workflow scope pushes it into .github/workflows/.
-          #
-          # The tag is deliberately not :latest. k3s treats a :latest tag as
-          # mutable and tries to pull it even under IfNotPresent, which fails
-          # against a private GHCR package with no pull secret. A fixed tag
-          # resolves locally. Switch this to :latest with imagePullPolicy
-          # Always once the workflow publishes to the registry.
-          image: ghcr.io/mateuseap/sotto:m1
-          imagePullPolicy: IfNotPresent
+        - name: server
+          image: ghcr.io/mateuseap/sotto-server:latest
+          imagePullPolicy: Always
           securityContext:
             allowPrivilegeEscalation: false
             capabilities: { drop: [ALL] }
@@ -37,6 +30,8 @@ spec:
               value: production
             - name: PORT
               value: "3001"
+            # The browser talks to the client origin only: nginx proxies /api
+            # onward, so the Origin header the server sees is the public host.
             - name: ALLOWED_ORIGINS
               value: https://sotto.lab.mateuseap.com
             # Each live session holds a paid upstream transcription stream, so
@@ -60,3 +55,15 @@ spec:
             httpGet: { path: /api/health, port: 3001 }
             initialDelaySeconds: 20
             periodSeconds: 30
+---
+apiVersion: v1
+kind: Service
+metadata:
+  # Named `server` on purpose: the client nginx proxies /api to
+  # http://server:3001 (same pattern as pixelhub).
+  name: server
+  namespace: sotto
+  labels: { app: server }
+spec:
+  selector: { app: server }
+  ports: [{ name: http, port: 3001 }]
