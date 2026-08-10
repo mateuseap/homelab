@@ -3,3 +3,6 @@ secrets.yaml
 *.secret.yaml
 sealing-key-backup.yaml
 *.sql.gz
+
+# Local Claude worktrees are per-machine state, never committed.
+.claude/worktrees/
