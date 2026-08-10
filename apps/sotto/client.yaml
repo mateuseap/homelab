@@ -11,6 +11,8 @@ spec:
     metadata:
       labels: { app: client }
     spec:
+      imagePullSecrets:
+        - name: ghcr-pull
       securityContext:
         seccompProfile: { type: RuntimeDefault }
       containers:
