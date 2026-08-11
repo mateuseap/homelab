@@ -6,7 +6,9 @@ streaming, no audio ever written to disk.
 ## Using it
 
 1. Open https://sotto.lab.mateuseap.com
-2. Browser prompts Basic Auth. Credentials are out-of-band: user `sotto`, password shared separately (rotate via `docs/RUNBOOK.md` sealed-secret flow if lost).
+2. App shows a login page; enter the password. The app hashes it against a
+   stored bcrypt hash and, on success, sets an `httpOnly` cookie that gates
+   the session.
 3. Grant microphone permission when prompted.
 4. Start the session. Audio streams over WebSocket to the server, the
    server streams it to Deepgram, transcript comes back live.
@@ -33,18 +35,17 @@ rolling update would briefly run two server pods, doubling concurrent
 Deepgram streams against the same key. Recreate means a deploy drops all
 live sessions for a few seconds instead.
 
-**Access control:** Traefik `BasicAuth` Middleware in front of the whole
-ingress (`apps/sotto/middleware.yaml` + `apps/sotto/auth-secret.yaml`),
-same layer for static assets, `/api`, and the WebSocket. Credentials are a
-bcrypt hash, safe to commit. Separately, `SESSION_TOKEN` gates the
-WebSocket upgrade itself so a forged Origin header alone cannot open a
-session.
+**Access control:** app-level login, not Traefik `BasicAuth`. The password
+is hashed with bcrypt and stored (sealed) as `LOGIN_PASSWORD_HASH`; on
+success the server sets an `httpOnly` cookie that gates the rest of the
+session. Replaces the old `middleware.yaml` + `auth-secret.yaml` pair
+and the baked-in `SESSION_TOKEN` flow.
 
-**Secrets:** `deepgram-api-key` and `session-token` live in
-`apps/sotto/sealed-secrets.yaml`, sealed with the cluster's public key.
-Rotating either means re-sealing with `kubeseal --raw --cert` against the
-same field name (see `docs/RUNBOOK.md`) and replacing only that ciphertext
-line, never the whole file.
+**Secrets:** `deepgram-api-key` and the bcrypt hash `login-password-hash`
+live in `apps/sotto/sealed-secrets.yaml`, sealed with the cluster's
+public key. Rotating either means re-sealing with `kubeseal --raw --cert`
+against the same field name (see `docs/RUNBOOK.md`) and replacing only
+that ciphertext line, never the whole file.
 
 **Cost model:** Deepgram bills per audio-minute streamed. Nothing runs
 when no one is connected, so idle cost is zero. Worst case is 5 concurrent
