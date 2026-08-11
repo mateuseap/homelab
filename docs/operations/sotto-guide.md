@@ -6,8 +6,7 @@ streaming, no audio ever written to disk.
 ## Using it
 
 1. Open https://sotto.lab.mateuseap.com
-2. Browser prompts Basic Auth: user `sotto`, password from your password
-   manager (rotate via `docs/RUNBOOK.md` sealed-secret flow if lost).
+2. Browser prompts Basic Auth. Credentials are out-of-band: user `sotto`, password shared separately (rotate via `docs/RUNBOOK.md` sealed-secret flow if lost).
 3. Grant microphone permission when prompted.
 4. Start the session. Audio streams over WebSocket to the server, the
    server streams it to Deepgram, transcript comes back live.
