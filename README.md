@@ -31,6 +31,7 @@ Hand-configured servers rot: undocumented tweaks pile up, migrations become arch
 | 👾 **[PixelHub](https://github.com/mateuseap/pixelhub)** | Gather-style 2D world with proximity chat and voice |
 | 🎵 **[Mixtape](https://github.com/mateuseap/mixtape)** | Open library of interactive 3D sound equipment (MP3 player, CD player) |
 | 🧭 **9Router** | Self-hosted AI gateway providing rate-limit fallback for Claude Code (`9router.lab.mateuseap.com`) |
+| 🎙 **Sotto** | Live microphone transcription in the browser, powered by Deepgram streaming (`sotto.lab.mateuseap.com`) |
 | 🛰 **ArgoCD** | GitOps engine and live app dashboard (`argo.lab.mateuseap.com`) |
 | 📈 **Grafana + Prometheus** | Metrics, trimmed for a 1 vCPU node (`grafana.lab.mateuseap.com`) |
 | 🔐 **cert-manager** | Automatic Let's Encrypt TLS for every host |
