@@ -167,7 +167,7 @@ Point `*.lab.yourdomain.com` at the machine, seal your secrets, restore the late
 | [Design Spec](docs/specs/) | Original platform design note and rationale |
 | [References](docs/references.md) | Curated study links for every technology in the stack |
 
-Monitoring is one curated **Homelab Overview** dashboard with four sections (VPS, Kubernetes, ChessKernel, PixelHub). Both apps are deployed, PixelHub with LiveKit voice, and both app servers expose cluster-internal `/metrics` scraped via ServiceMonitors.
+Monitoring is one curated **Homelab Overview** dashboard with six sections (VPS, Kubernetes, ChessKernel, PixelHub, Sotto, 9router). Both apps are deployed, PixelHub with LiveKit voice, and both app servers expose cluster-internal `/metrics` scraped via ServiceMonitors.
 
 ## Contributing
 

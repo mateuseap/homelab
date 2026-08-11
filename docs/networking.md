@@ -28,6 +28,9 @@ flowchart LR
     Node --> Traefik["Traefik<br/>TLS termination + host routing"]
     Traefik -->|chesskernel.com, chesskernel.lab| CK["chesskernel client"]
     Traefik -->|pixelhub.lab| PH["pixelhub client"]
+    Traefik -->|mixtape.lab| MIX["mixtape"]
+    Traefik -->|sotto.lab| SOT["sotto"]
+    Traefik -->|9router.lab| R9R["9router"]
     Traefik -->|argo.lab| ARG["argocd-server"]
     Traefik -->|grafana.lab| GRAF["grafana"]
     Traefik -->|livekit.lab| LK["livekit :7880 (wss)"]
@@ -45,6 +48,7 @@ flowchart LR
 | `grafana.lab.mateuseap.com` | Grafana | Ingress defined in the monitoring chart values |
 | `livekit.lab.mateuseap.com` | LiveKit signaling | `wss` signaling only; media bypasses Traefik (see below) |
 | `mixtape.lab.mateuseap.com` | Mixtape service | `mixtape-tls` |
+| `sotto.lab.mateuseap.com` | Sotto service (app-level login; bcrypt hash) | `sotto-tls` |
 | `9router.lab.mateuseap.com` | 9Router service | `9router-tls`; holds subscription OAuth tokens |
 | `homelab.mateuseap.com` | Landing page (apps/landing) | Own A record, not under the `*.lab` wildcard; static showcase served by the cluster |
 
