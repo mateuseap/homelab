@@ -44,9 +44,13 @@ spec:
             - name: DEEPGRAM_API_KEY
               valueFrom:
                 secretKeyRef: { name: sotto-secrets, key: deepgram-api-key }
-            - name: SESSION_TOKEN
+            # App-level login: bcrypt hash of the password set by the user,
+            # committed as a LOGIN_PASSWORD_HASH SealedSecret (not present yet
+            # here; sealed separately). App sets an httpOnly cookie on success,
+            # replacing the Traefik BasicAuth + SESSION_TOKEN flow.
+            - name: LOGIN_PASSWORD_HASH
               valueFrom:
-                secretKeyRef: { name: sotto-secrets, key: session-token }
+                secretKeyRef: { name: sotto-secrets, key: login-password-hash }
           resources:
             requests: { cpu: 50m, memory: 120Mi }
             limits: { memory: 300Mi }
