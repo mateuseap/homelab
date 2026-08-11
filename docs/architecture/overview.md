@@ -1,6 +1,6 @@
 # Platform Overview
 
-This homelab is one VPS (1 vCPU, 4 GB, 179.197.71.43) running single-node k3s, declared entirely in this git repo. ArgoCD watches the repo and makes the cluster match it. Four applications run on top: ChessKernel, PixelHub, Mixtape, and 9Router.
+This homelab is one VPS (1 vCPU, 4 GB, 179.197.71.43) running single-node k3s, declared entirely in this git repo. ArgoCD watches the repo and makes the cluster match it. Five applications run on top: ChessKernel, PixelHub, Mixtape, Sotto, and 9Router.
 
 For the decisions behind this design, see the [ADRs](../adr/). For the original design note, see [docs/specs](../specs/). For step-by-step operations, see the [runbook](../RUNBOOK.md).
 
@@ -40,10 +40,21 @@ graph TB
         subgraph mix["ns: mixtape"]
             MixApp["mixtape (node/express)"]
         end
+        subgraph sotto["ns: sotto"]
+            SClient["client (nginx)"]
+            SServer["server (Node)"]
+        end
+        subgraph router["ns: 9router"]
+            R9["9router (Rust)"]
+            R9PVC["PVC"]
+        end
     end
 
     ArgoCD -. reconciles .-> chess
     ArgoCD -. reconciles .-> pixel
+    ArgoCD -. reconciles .-> mix
+    ArgoCD -. reconciles .-> sotto
+    ArgoCD -. reconciles .-> router
     ArgoCD -. reconciles .-> mon
     CertMgr -. issues certs .-> Traefik
     Prom -. scrapes .-> CServer
@@ -78,6 +89,8 @@ graph LR
         CK["chesskernel"]
         PH["pixelhub"]
         MIX["mixtape"]
+        SOT["sotto"]
+        R9R["9router"]
     end
 
     Root --> w0 --> w1 --> w2
@@ -101,12 +114,16 @@ flowchart LR
 
     Traefik -- "chesskernel.com<br/>chesskernel.lab" --> CClient["chesskernel client"]
     Traefik -- "pixelhub.lab" --> PClient["pixelhub client"]
+    Traefik -- "mixtape.lab" --> MClient["mixtape"]
+    Traefik -- "sotto.lab" --> SClient["sotto client"]
+    Traefik -- "9router.lab" --> R9C["9router"]
     Traefik -- "argo.lab" --> Argo["argocd-server"]
     Traefik -- "grafana.lab" --> Graf["grafana"]
     Traefik -- "livekit.lab (wss signaling)" --> LK["livekit :7880"]
 
     CClient -- "/api, /socket.io" --> CServer["server :3001"]
     PClient -- "/colyseus" --> PServer["server :2567"]
+    SClient -- "/api" --> SServer["server :3001"]
 
     User -- "WebRTC media<br/>7882/udp, 7881/tcp<br/>(bypasses Traefik)" --> LK
 ```
@@ -161,6 +178,7 @@ Credentials come from the sealed `r2-backup-credentials`. Restore is a manual `g
 | `chesskernel` | Client, NestJS server, PostgreSQL, Redis, backup CronJob |
 | `pixelhub` | Client, Colyseus server, LiveKit SFU |
 | `mixtape` | Single node/express service, PVC-backed storage, multiple 3D sound-equipment UIs |
+| `sotto` | Client (nginx) + Node server; live Deepgram transcription, no PVC |
 | `9router` | Self-hosted AI gateway (Deployment + PVC); holds subscription OAuth tokens on its PVC |
 
 Each application and platform namespace carries a `homelab.mateuseap.com/description` annotation and `argocd.argoproj.io/sync-options: Prune=false`, so removing a namespace declaration never deletes a running namespace and its data (`platform/config/namespaces.yaml`).
@@ -169,7 +187,7 @@ Each application and platform namespace carries a `homelab.mateuseap.com/descrip
 
 kube-prometheus-stack (chart 62.7.0) is trimmed for the node: 5-day / 2 GB retention, Alertmanager disabled (Grafana shows state), and the chart's default dashboards disabled in favor of a single curated one. Both application servers expose `/metrics` on their cluster-internal service port (never through the public ingress), scraped by `ServiceMonitor`s at a 60s interval. LiveKit exposes its native Prometheus endpoint on port 6789, also cluster-internal, scraped by its own `ServiceMonitor`.
 
-The one curated dashboard, **Homelab Overview**, has four sections:
+The one curated dashboard, **Homelab Overview**, has six sections:
 
 | Section | Panels |
 |---------|--------|
@@ -177,5 +195,7 @@ The one curated dashboard, **Homelab Overview**, has four sections:
 | Kubernetes | CPU by namespace, memory by namespace, pod restarts (24h), top pods by memory |
 | ChessKernel | games active, players connected, usage over time, Stockfish load |
 | PixelHub | players online, in voice now, activity per hour, players over time, voice participants over time |
+| Sotto | CPU, memory, pods running, restarts (24h), CPU over time, memory over time |
+| 9router | CPU, memory, pods running, restarts (24h), CPU over time, memory over time |
 
 See [operations/adding-an-app](../operations/adding-an-app.md) for the ServiceMonitor pattern and the monitoring/upgrade notes.
