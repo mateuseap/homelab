@@ -14,6 +14,8 @@ spec:
   template:
     metadata:
       labels: { app: server }
+      annotations:
+        rollout-trigger: "2026-08-12T03:56:01Z"
     spec:
       imagePullSecrets:
         - name: ghcr-pull
@@ -51,6 +53,12 @@ spec:
             - name: LOGIN_PASSWORD_HASH
               valueFrom:
                 secretKeyRef: { name: sotto-secrets, key: login-password-hash }
+            # 9router API key used to generate session summaries.
+            - name: SUMMARY_API_KEY
+              valueFrom:
+                secretKeyRef: { name: sotto-secrets, key: summary-api-key }
+            - name: SUMMARY_MODEL
+              value: oc/deepseek-v4-flash-free(high)
           resources:
             requests: { cpu: 50m, memory: 120Mi }
             limits: { memory: 300Mi }
