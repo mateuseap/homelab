@@ -1,6 +1,6 @@
 # Platform Overview
 
-This homelab is one VPS (1 vCPU, 4 GB, 179.197.71.43) running single-node k3s, declared entirely in this git repo. ArgoCD watches the repo and makes the cluster match it. Five applications run on top: ChessKernel, PixelHub, Mixtape, Sotto, and 9Router.
+This homelab is one VPS (1 vCPU, 4 GB, 179.197.71.43) running single-node k3s, declared entirely in this git repo. ArgoCD watches the repo and makes the cluster match it. Five user-facing applications are self-hosted on top: ChessKernel, PixelHub, Mixtape, Sotto, and 9Router. ArgoCD, Traefik, cert-manager, sealed-secrets, Prometheus, Grafana, exporters, data stores, and backup jobs are supporting infrastructure. HomeLab Landing is an externally hosted public showcase, not one of the five self-hosted applications.
 
 For the decisions behind this design, see the [ADRs](../adr/). For the original design note, see [docs/specs](../specs/). For step-by-step operations, see the [runbook](../RUNBOOK.md).
 
@@ -42,10 +42,10 @@ graph TB
         end
         subgraph sotto["ns: sotto"]
             SClient["client (nginx)"]
-            SServer["server (Node)"]
+            SServer["server (Node)<br/>English/Portuguese transcription<br/>AI summary via 9Router"]
         end
         subgraph router["ns: 9router"]
-            R9["9router (Rust)"]
+            R9["9router<br/>authenticated AI gateway"]
             R9PVC["PVC"]
         end
     end
@@ -64,7 +64,7 @@ graph TB
     CBackup -. pg_dump .-> R2["Cloudflare R2"]
 ```
 
-The control plane and the kubelet run inside a single k3s process. Traefik, CoreDNS, and local-path storage ship with k3s. Namespaces carry a human-readable `homelab.mateuseap.com/description` annotation and are protected from pruning (see [Namespaces](#namespaces)).
+The control plane and the kubelet run inside a single k3s process. Traefik, CoreDNS, and local-path storage ship with k3s. Namespaces carry a human-readable `homelab.mateuseap.com/description` annotation and are protected from pruning (see [Namespaces](#namespaces)). Sotto streams bilingual English/Portuguese transcription through Deepgram and requests AI-generated summaries through 9Router. 9Router is an authenticated AI gateway with PVC-backed OAuth token and API key storage.
 
 ## GitOps flow and sync waves
 
@@ -104,13 +104,15 @@ Adding a project is one folder in `apps/` and one Application in `argocd/`, then
 
 ## Traffic path
 
-All hostnames resolve to the node through the `*.lab.mateuseap.com` wildcard record (plus ChessKernel's own domain). Traefik terminates TLS once and routes by `Host` header to the right backend Service. WebSocket (`wss`) rides the same path. The one exception is LiveKit's WebRTC media, which cannot go through Traefik because it is UDP.
+Cluster hostnames resolve to the node through the `*.lab.mateuseap.com` wildcard record, plus ChessKernel's own domain. Traefik terminates TLS once and routes by `Host` header to the right backend Service. WebSocket (`wss`) rides the same path. The one exception is LiveKit's WebRTC media, which cannot go through Traefik because it is UDP. HomeLab Landing is externally hosted and does not use this cluster traffic path.
 
 ```mermaid
 flowchart LR
     User["Browser"]
+    Landing["HomeLab Landing<br/>externally hosted"]
 
     User -- "HTTPS / WSS :443<br/>Host header" --> Traefik["Traefik<br/>(TLS + host routing)"]
+    User --> Landing
 
     Traefik -- "chesskernel.com<br/>chesskernel.lab" --> CClient["chesskernel client"]
     Traefik -- "pixelhub.lab" --> PClient["pixelhub client"]
@@ -178,14 +180,14 @@ Credentials come from the sealed `r2-backup-credentials`. Restore is a manual `g
 | `chesskernel` | Client, NestJS server, PostgreSQL, Redis, backup CronJob |
 | `pixelhub` | Client, Colyseus server, LiveKit SFU |
 | `mixtape` | Single node/express service, PVC-backed storage, multiple 3D sound-equipment UIs |
-| `sotto` | Client (nginx) + Node server; live Deepgram transcription, no PVC |
-| `9router` | Self-hosted AI gateway (Deployment + PVC); holds subscription OAuth tokens on its PVC |
+| `sotto` | Client (nginx) + Node server; bilingual English/Portuguese live Deepgram transcription and AI summaries through 9Router; no PVC |
+| `9router` | Authenticated self-hosted AI gateway (Deployment + PVC); holds subscription OAuth tokens and issued API keys on its PVC |
 
 Each application and platform namespace carries a `homelab.mateuseap.com/description` annotation and `argocd.argoproj.io/sync-options: Prune=false`, so removing a namespace declaration never deletes a running namespace and its data (`platform/config/namespaces.yaml`).
 
 ## Monitoring model
 
-kube-prometheus-stack (chart 62.7.0) is trimmed for the node: 5-day / 2 GB retention, Alertmanager disabled (Grafana shows state), and the chart's default dashboards disabled in favor of a single curated one. Both application servers expose `/metrics` on their cluster-internal service port (never through the public ingress), scraped by `ServiceMonitor`s at a 60s interval. LiveKit exposes its native Prometheus endpoint on port 6789, also cluster-internal, scraped by its own `ServiceMonitor`.
+kube-prometheus-stack (chart 62.7.0) is trimmed for the node: 5-day / 2 GB retention, Alertmanager disabled (Grafana shows state), and the chart's default dashboards disabled in favor of a single curated one. ChessKernel and PixelHub expose `/metrics` on their cluster-internal server Service ports, never through public ingress, and `ServiceMonitor`s scrape them every 60 seconds. LiveKit exposes its native Prometheus endpoint on port 6789, also cluster-internal, through its own `ServiceMonitor`. Sotto and 9Router resource and health panels use Kubernetes metrics from kube-state-metrics and the kubelet rather than app-specific endpoints.
 
 The one curated dashboard, **Homelab Overview**, has six sections:
 
@@ -196,6 +198,6 @@ The one curated dashboard, **Homelab Overview**, has six sections:
 | ChessKernel | games active, players connected, usage over time, Stockfish load |
 | PixelHub | players online, in voice now, activity per hour, players over time, voice participants over time |
 | Sotto | CPU, memory, pods running, restarts (24h), CPU over time, memory over time |
-| 9router | CPU, memory, pods running, restarts (24h), CPU over time, memory over time |
+| 9Router | CPU, memory, pods running, restarts (24h), CPU over time, memory over time |
 
 See [operations/adding-an-app](../operations/adding-an-app.md) for the ServiceMonitor pattern and the monitoring/upgrade notes.

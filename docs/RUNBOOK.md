@@ -74,18 +74,20 @@ A backup that has never been restored is not a backup.
 
 ## Deploy a new version of an app
 
-CI pushes `:latest` to GHCR on merge to main. Then:
+First-party app CI pushes `:latest` to GHCR on merge to main. Restart only the
+Deployment names present in the affected namespace:
 
 ```bash
-kubectl -n chesskernel rollout restart deploy/server deploy/client
+kubectl -n <app> rollout restart deploy/<deployment>
 ```
 
-(Automating this with argocd-image-updater is a later milestone.)
+9Router uses the third-party `decolua/9router:latest` image rather than GHCR.
+Automating image rollouts with argocd-image-updater is a later milestone.
 
 ## Add a new project
 
-1. Create `apps/<name>/` with Deployment/Service/Ingress (+ sealed secrets).
-2. Add `argocd/app-<name>.yaml` (copy `app-chesskernel.yaml`, change name/path).
+1. Create `apps/<name>/` with the Deployment, Service, Ingress, storage, and sealed secrets it needs. Choose the closest existing app shape; do not assume every app needs separate client and server Deployments.
+2. Add `argocd/app-<name>.yaml`, using an existing application manifest as the base and changing its name, path, and namespace.
 3. Push. ArgoCD picks it up; cert-manager issues TLS for its subdomain. Done, no DNS change needed (wildcard covers it), no SSH needed.
 
 ## Cutover from docker-compose (one-time, chesskernel)

@@ -24,19 +24,27 @@ Hand-configured servers rot: undocumented tweaks pile up, migrations become arch
 
 ## What runs on it
 
-|  |  |
-|--|--|
-| 🏗 **[HomeLab Landing](https://github.com/mateuseap/homelab-landing)** | The public showcase for the HomeLab GitOps platform. Vanilla static site. |
+Five user-facing applications are self-hosted on the 1 vCPU / 4 GB VPS:
+
+| App | Purpose |
+|-----|---------|
 | ♟️ **[ChessKernel](https://github.com/mateuseap/chesskernel)** | Chess platform at [chesskernel.com](https://chesskernel.com) |
 | 👾 **[PixelHub](https://github.com/mateuseap/pixelhub)** | Gather-style 2D world with proximity chat and voice |
 | 🎵 **[Mixtape](https://github.com/mateuseap/mixtape)** | Open library of interactive 3D sound equipment (MP3 player, CD player) |
-| 🎙 **Sotto** | Live microphone transcription in the browser, powered by Deepgram streaming (`sotto.lab.mateuseap.com`) |
-| 🧭 **9Router** | Self-hosted AI gateway providing rate-limit fallback for Claude Code (`9router.lab.mateuseap.com`) |
+| 🎙 **Sotto** | Bilingual English/Portuguese live transcription with AI-generated summaries through 9Router (`sotto.lab.mateuseap.com`) |
+| 🧭 **9Router** | Self-hosted AI gateway providing authenticated rate-limit fallback for Claude Code (`9router.lab.mateuseap.com`) |
+
+Infrastructure services support those apps:
+
+| Service | Purpose |
+|---------|---------|
 | 🛰 **ArgoCD** | GitOps engine and live app dashboard (`argo.lab.mateuseap.com`) |
 | 📈 **Grafana + Prometheus** | Metrics, trimmed for a 1 vCPU node (`grafana.lab.mateuseap.com`) |
-| 🔐 **cert-manager** | Automatic Let's Encrypt TLS for every host |
+| 🔐 **cert-manager** | Automatic Let's Encrypt TLS for every cluster host |
 | 🗝 **sealed-secrets** | Encrypted secrets, safe in public git |
 | 💾 **Nightly backups** | `pg_dump` to Cloudflare R2, 14-day rotation |
+
+The externally hosted **[HomeLab Landing](https://github.com/mateuseap/homelab-landing)** is the public showcase. It is separate from the five self-hosted applications and cluster infrastructure.
 
 ## Architecture at a glance
 
@@ -53,6 +61,8 @@ flowchart TB
         chess["ChessKernel<br/>client, server, postgres, redis"]
         pixel["PixelHub<br/>client, server, LiveKit"]
         mix["Mixtape<br/>server, storage"]
+        sotto["Sotto<br/>English/Portuguese transcription, AI summary"]
+        router["9Router<br/>authenticated AI gateway, storage"]
         mon["Prometheus + Grafana<br/>curated Homelab Overview dashboard"]
         cron["CronJob<br/>nightly pg_dump"]
     end
@@ -64,6 +74,8 @@ flowchart TB
     argo --> chess
     argo --> pixel
     argo --> mix
+    argo --> sotto
+    argo --> router
     argo --> mon
     argo --> seal
     argo --> cm
@@ -72,13 +84,18 @@ flowchart TB
     traefik --> chess
     traefik --> pixel
     traefik --> mix
+    traefik --> sotto
+    traefik --> router
     traefik --> argo
     traefik --> mon
     ghcr -.->|image pulls| chess
     ghcr -.->|image pulls| pixel
     ghcr -.->|image pulls| mix
+    ghcr -.->|image pulls| sotto
     cron --> r2
     seal -.-> chess
+    seal -.-> sotto
+    seal -.-> router
 ```
 
 **The deploy loop.** Merging to `main` is the only deploy action. App code and platform config both flow through git.
@@ -86,7 +103,7 @@ flowchart TB
 ```mermaid
 flowchart LR
     dev(["push to main"])
-    subgraph app["app repo (ChessKernel / PixelHub)"]
+    subgraph app["first-party app repos<br/>ChessKernel, PixelHub, Mixtape, Sotto"]
         ci["GitHub Actions<br/>build image"]
     end
     ghcr[("GHCR")]
@@ -167,7 +184,7 @@ Point `*.lab.yourdomain.com` at the machine, seal your secrets, restore the late
 | [Design Spec](docs/specs/) | Original platform design note and rationale |
 | [References](docs/references.md) | Curated study links for every technology in the stack |
 
-Monitoring is one curated **Homelab Overview** dashboard with six sections (VPS, Kubernetes, ChessKernel, PixelHub, Sotto, 9router). Both apps are deployed, PixelHub with LiveKit voice, and both app servers expose cluster-internal `/metrics` scraped via ServiceMonitors.
+Monitoring uses one curated **Homelab Overview** dashboard with six sections (VPS, Kubernetes, ChessKernel, PixelHub, Sotto, 9Router). ChessKernel and PixelHub expose cluster-internal application `/metrics` through ServiceMonitors, LiveKit exposes its cluster-internal native metrics endpoint, and Kubernetes metrics provide resource and health panels for Sotto and 9Router.
 
 ## Contributing
 

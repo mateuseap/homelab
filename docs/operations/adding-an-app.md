@@ -2,7 +2,7 @@
 
 Everything the cluster runs is declared in this repo. Adding a project means writing manifests, sealing its secrets, and pushing. ArgoCD picks it up, cert-manager issues its TLS, and the wildcard DNS already resolves its host. No SSH and no DNS change are needed.
 
-This guide uses `<name>` for the new project. ChessKernel and PixelHub in `apps/` are the two worked examples to copy from.
+This guide uses `<name>` for the new project. Choose an existing app with a matching shape: ChessKernel or PixelHub for split client/server apps, Sotto for a private GHCR client/server app with app-level login, Mixtape for a single PVC-backed service, or 9Router for a third-party PVC-backed service. Copy only the relevant pattern.
 
 ## 1. Application manifests in `apps/<name>/`
 
@@ -17,7 +17,7 @@ A typical web app has:
 
 Set resource `requests` and `limits` on every container. The node is 1 vCPU / 4 GB and CPU is the scarce resource; unbounded pods starve everything else. Copy the sizing in the existing apps as a baseline.
 
-Images are pulled from GHCR as `ghcr.io/mateuseap/<name>-<component>:latest` with `imagePullPolicy: Always`. CI in the app's own repo builds and pushes `:latest` on merge; you roll out with `kubectl rollout restart` (see [Upgrading](#upgrading-components)).
+First-party images are pulled from GHCR as `ghcr.io/mateuseap/<name>-<component>:latest` with `imagePullPolicy: Always`. CI in each app repo builds and pushes `:latest` on merge. Third-party services may use their upstream registry, as 9Router does with `decolua/9router:latest`. Roll out the affected Deployment with `kubectl rollout restart` (see [Upgrading](#upgrading-components)).
 
 ## 2. The Application manifest in `argocd/`
 
@@ -130,7 +130,7 @@ Open a PR (see [CONTRIBUTING](../../CONTRIBUTING.md)). Once merged to `main`, Ar
 
 ## Upgrading components
 
-- **Application images** track `:latest`. CI pushes on merge; roll out with `kubectl -n <name> rollout restart deploy/server deploy/client`. Automating this with argocd-image-updater is a later milestone.
+- **Application images** track `:latest`. CI pushes first-party images on merge; third-party images follow their upstream registry. Restart only Deployment names present in that app, for example `kubectl -n <name> rollout restart deploy/<deployment>`. Automating this with argocd-image-updater is a later milestone.
 - **Helm-based platform components** (cert-manager, sealed-secrets, kube-prometheus-stack) are pinned by chart version in their `argocd/platform-*.yaml`. Upgrade by bumping `targetRevision`, reading the chart's changelog for CRD or values changes, and pushing. ArgoCD applies it. The monitoring app uses `ServerSideApply=true` because the Prometheus CRDs exceed the client-side apply size limit.
 - **ArgoCD itself** is installed by `bootstrap/install.sh`, which tracks the `stable` channel (currently v3.4.5). Re-running the script upgrades it; the runtime trims (dex and notifications scaled to zero, `server.insecure=true`) are re-applied idempotently.
 - **k3s** upgrades are node-level, done over SSH, outside GitOps.
