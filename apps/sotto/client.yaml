@@ -10,6 +10,8 @@ spec:
   template:
     metadata:
       labels: { app: client }
+      annotations:
+        rollout-trigger: "2026-08-12T03:56:01Z"
     spec:
       imagePullSecrets:
         - name: ghcr-pull
