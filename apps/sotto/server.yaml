@@ -58,7 +58,7 @@ spec:
               valueFrom:
                 secretKeyRef: { name: sotto-secrets, key: summary-api-key }
             - name: SUMMARY_MODEL
-              value: oc/deepseek-v4-flash-free(high)
+              value: free
           resources:
             requests: { cpu: 50m, memory: 120Mi }
             limits: { memory: 300Mi }
