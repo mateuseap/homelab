@@ -1,6 +1,6 @@
 # Networking
 
-One node, one IP, many hostnames. This document describes how names reach the node, how the node routes them, how certificates are issued, and the single exception to host-based routing (LiveKit media). For the decisions behind it, see [ADR-005](adr/005-wildcard-dns-traefik-sni-routing.md) and [ADR-004](adr/004-cert-manager-http01-vs-dns01.md).
+One node, one IP, many cluster hostnames. This document describes how names reach the node, how the node routes them, how certificates are issued, and the single exception to host-based routing (LiveKit media). Five user-facing applications are self-hosted through this cluster: ChessKernel, PixelHub, Mixtape, Sotto, and 9Router. Supporting hosts expose infrastructure services such as ArgoCD and Grafana. HomeLab Landing is externally hosted and outside this cluster route map. For the decisions behind this design, see [ADR-005](adr/005-wildcard-dns-traefik-sni-routing.md) and [ADR-004](adr/004-cert-manager-http01-vs-dns01.md).
 
 ## Wildcard DNS
 
@@ -16,7 +16,7 @@ The platform needs exactly one record to serve any number of `.lab` hosts, plus 
 | a custom apex, e.g. `chesskernel.com` | A | node public IP | that domain's DNS provider |
 | `www` on the custom domain | A (or CNAME to the apex) | node public IP | same provider |
 
-The apex of `mateuseap.com` and its `www` stay on GitHub Pages; only the `*.lab` label is delegated to the node, so the wildcard never collides with the public site. Adding a `.lab` service needs no new record because the wildcard already covers it. A custom domain needs its own apex record because a wildcard for one registrable domain does not cover a different one. Keep the TTL low (300s) while setting up, and confirm resolution with `dig +short <host>` before expecting a certificate: cert-manager can only pass HTTP-01 once the host resolves to the node.
+The apex of `mateuseap.com`, its `www`, and externally hosted sites such as HomeLab Landing stay outside this cluster; only the `*.lab` label is delegated to the node, so the wildcard never collides with those public sites. Adding a `.lab` service needs no new record because the wildcard already covers it. A custom domain needs its own apex record because a wildcard for one registrable domain does not cover a different one. Keep the TTL low (300s) while setting up, and confirm resolution with `dig +short <host>` before expecting a certificate: cert-manager can only pass HTTP-01 once the host resolves to the node.
 
 ## Traefik ingress and SNI host routing
 
@@ -48,9 +48,8 @@ flowchart LR
 | `grafana.lab.mateuseap.com` | Grafana | Ingress defined in the monitoring chart values |
 | `livekit.lab.mateuseap.com` | LiveKit signaling | `wss` signaling only; media bypasses Traefik (see below) |
 | `mixtape.lab.mateuseap.com` | Mixtape service | `mixtape-tls` |
-| `sotto.lab.mateuseap.com` | Sotto service (app-level login; bcrypt hash) | `sotto-tls` |
-| `9router.lab.mateuseap.com` | 9Router service | `9router-tls`; holds subscription OAuth tokens |
-| `homelab.mateuseap.com` | Landing page (apps/landing) | Own A record, not under the `*.lab` wildcard; static showcase served by the cluster |
+| `sotto.lab.mateuseap.com` | Sotto client and API | `sotto-tls`; app-level bcrypt login; bilingual English/Portuguese transcription and AI summaries through 9Router |
+| `9router.lab.mateuseap.com` | Authenticated 9Router AI gateway | `9router-tls`; API key required; OAuth tokens and issued API keys stored on its PVC |
 
 ### Why ChessKernel has two Ingress objects
 
