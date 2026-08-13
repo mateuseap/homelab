@@ -29,7 +29,10 @@ grafana:
   # Only curated dashboards (sidecar ConfigMaps): the chart's ~30 default
   # dashboards are noise for a single-node homelab.
   defaultDashboardsEnabled: false
-  adminPassword: changeme-on-first-login # rotated in UI
+  admin:
+    existingSecret: grafana-admin
+    userKey: admin-user
+    passwordKey: admin-password
   persistence:
     enabled: true
     storageClassName: local-path
