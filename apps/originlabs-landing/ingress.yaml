@@ -1,0 +1,31 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: originlabs-landing
+  namespace: originlabs-landing
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+spec:
+  ingressClassName: traefik
+  rules:
+    - host: originlabsbr.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: originlabs-landing
+                port: { number: 80 }
+    - host: originlabsbr.com.br
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: originlabs-landing
+                port: { number: 80 }
+  tls:
+    - hosts: [originlabsbr.com, originlabsbr.com.br]
+      secretName: originlabs-landing-tls
