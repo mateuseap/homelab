@@ -1,0 +1,11 @@
+apiVersion: traefik.io/v1alpha1
+kind: ServersTransport
+metadata:
+  name: streaming
+  namespace: 9router
+spec:
+  maxIdleConnsPerHost: 32
+  forwardingTimeouts:
+    dialTimeout: 30s
+    responseHeaderTimeout: 300s
+    idleConnTimeout: 900s

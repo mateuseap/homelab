@@ -99,6 +99,42 @@ Automating image rollouts with argocd-image-updater is a later milestone.
 5. Verify: login + play a game on both domains, HTTPS valid.
 6. Rollback if needed: `docker compose up -d` brings the old stack back.
 
+## 9Router inference reliability
+
+Claude Code uses `https://9router.lab.mateuseap.com/v1`. Traffic follows this path:
+
+```text
+Claude Code
+-> public DNS
+-> Traefik TLS ingress
+-> 9Router Service
+-> 9Router pod
+-> selected provider
+```
+
+9Router is pinned to a reviewed image digest. `apps/9router/streaming.yaml` gives its Traefik backend long response-header and idle-connection timeouts. The Deployment gives upstream connection, first-chunk, and stream-stall timeouts enough room for long reasoning requests.
+
+Check current state:
+
+```bash
+kubectl -n 9router get pod,svc,ingress
+kubectl -n 9router rollout status deploy/9router
+curl -fsS https://9router.lab.mateuseap.com/api/health
+curl -fsS https://9router.lab.mateuseap.com/api/version
+kubectl -n 9router logs deploy/9router --since=1h | \
+  grep -Ei '499|429|502|503|504|ECONNRESET|ResponseAborted|timeout|fetch failed'
+```
+
+Interpret failures by boundary:
+
+- `429` with `all accounts locked` is provider quota, not Traefik.
+- `TOKEN_REFRESH` with `invalid_grant` means provider OAuth must be reconnected in 9Router.
+- `ECONNRESET` or `ResponseAborted` in 9Router logs means provider or client stream disconnected.
+- Traefik errors without matching 9Router request logs indicate ingress or network failure.
+- An interrupted deploy is not successful until rollout, public health, streamed inference, and post-test logs pass.
+
+Before upgrade or recovery, back up Deployment, Ingress, and `/data/db/data.sqlite*`. Roll back image or manifests with the saved YAML, then verify the same health and stream checks. Never write credentials or database copies into Git.
+
 ## Troubleshooting quickies
 
 | Symptom | Check |

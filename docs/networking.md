@@ -36,6 +36,10 @@ flowchart LR
     Traefik -->|livekit.lab| LK["livekit :7880 (wss)"]
 ```
 
+## 9Router streaming route
+
+`9router.lab.mateuseap.com` is a direct public DNS A record to the VPS. No Cloudflare proxy, Cloudflare Tunnel, Nginx, or Tailscale hop is present. Traefik terminates TLS and sends requests to `router.9router.svc:80`, which targets the 9Router pod on port 20128. A service-scoped `ServersTransport` preserves long inference streams without changing timeout policy for unrelated applications.
+
 ## Hostname map
 
 | Host | Backend | Notes |
