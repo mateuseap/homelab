@@ -17,15 +17,10 @@ spec:
       containers:
         - name: 9router
           # Third-party image on Docker Hub, not built by this user's own
-          # CI, so it does not follow the ghcr.io/mateuseap/<name>:latest
-          # convention the other apps use. An immutable digest pin
-          # (decolua/9router@sha256:<digest>) is available upstream, but
-          # this deployment deliberately tracks :latest to pick up
-          # upstream fixes automatically, accepting the supply-chain
-          # trust tradeoff since this is a third-party image, not one
-          # built by this user's own CI.
-          image: decolua/9router:latest
-          imagePullPolicy: Always
+          # CI. Pin the multi-platform v0.5.69 image index so deploys are
+          # reproducible and upgrades remain explicit and reviewable.
+          image: decolua/9router@sha256:47c17576ad49f0918d1a455dd412ae4509ee8bc742f17ba0b3327ddc70f35a40
+          imagePullPolicy: IfNotPresent
           securityContext:
             allowPrivilegeEscalation: false
             # decolua/9router's entrypoint runs as root and uses su-exec to
@@ -47,6 +42,13 @@ spec:
               value: "true"
             - name: ENABLE_REQUEST_LOGS
               value: "false"
+            # Allow long first-token and reasoning gaps without aborting streams.
+            - name: FETCH_CONNECT_TIMEOUT_MS
+              value: "300000"
+            - name: STREAM_FIRST_CHUNK_TIMEOUT_MS
+              value: "300000"
+            - name: STREAM_STALL_TIMEOUT_MS
+              value: "900000"
             - name: JWT_SECRET
               valueFrom:
                 secretKeyRef: { name: 9router-secrets, key: jwt-secret }
@@ -60,8 +62,8 @@ spec:
               valueFrom:
                 secretKeyRef: { name: 9router-secrets, key: machine-id-salt }
           resources:
-            requests: { cpu: 30m, memory: 100Mi }
-            limits: { memory: 250Mi }
+            requests: { cpu: 50m, memory: 150Mi }
+            limits: { memory: 512Mi }
           readinessProbe:
             tcpSocket: { port: 20128 }
             initialDelaySeconds: 5
