@@ -17,7 +17,7 @@ spec:
         seccompProfile: { type: RuntimeDefault }
       containers:
         - name: api
-          image: ghcr.io/originlabsbr/capoaberto-api:01a4d21116270823297e6592c87e2fc81f179a93
+          image: ghcr.io/originlabsbr/capoaberto-api:4e4bad6adb3bc9c94cea2a6f99baefae8c9635a2
           imagePullPolicy: IfNotPresent
           securityContext:
             allowPrivilegeEscalation: false
