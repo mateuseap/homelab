@@ -42,4 +42,4 @@ metadata:
   namespace: originlabs-landing
 spec:
   selector: { app: originlabs-landing }
-  ports: [{ name: http, port: 80 }]
+  ports: [{ name: http, port: 80, targetPort: 8080 }]
