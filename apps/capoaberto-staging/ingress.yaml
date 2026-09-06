@@ -16,7 +16,7 @@ metadata:
 spec:
   stripPrefix:
     prefixes:
-/api
+      - /api
 ---
 apiVersion: networking.k8s.io/v1
 kind: Ingress
