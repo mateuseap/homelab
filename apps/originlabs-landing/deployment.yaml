@@ -22,16 +22,16 @@ spec:
           securityContext:
             allowPrivilegeEscalation: false
             capabilities: { drop: [ALL] }
-          ports: [{ containerPort: 808080 }]
+          ports: [{ containerPort: 8080 }]
           resources:
             requests: { cpu: 10m, memory: 32Mi }
             limits: { memory: 96Mi }
           readinessProbe:
-            httpGet: { path: /, port: 808080 }
+            httpGet: { path: /, port: 8080 }
             initialDelaySeconds: 5
             periodSeconds: 10
           livenessProbe:
-            httpGet: { path: /, port: 808080 }
+            httpGet: { path: /, port: 8080 }
             initialDelaySeconds: 20
             periodSeconds: 30
 ---
