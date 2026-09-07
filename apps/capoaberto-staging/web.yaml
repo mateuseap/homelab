@@ -26,6 +26,10 @@ spec:
           env:
             - name: NEXT_PUBLIC_ENV
               value: staging
+            # Server components render on the pod, so they need the in-cluster
+            # API address. Without it the default localhost target is refused.
+            - name: API_URL
+              value: http://api:3001
           resources:
             requests: { cpu: 20m, memory: 64Mi }
             limits: { memory: 192Mi }
