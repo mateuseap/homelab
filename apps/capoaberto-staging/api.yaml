@@ -31,10 +31,6 @@ spec:
             - name: DATABASE_URL
               valueFrom:
                 secretKeyRef: { name: capoaberto-db, key: DATABASE_URL }
-            - name: RESEND_API_KEY
-              valueFrom: { secretKeyRef: { name: capoaberto-secrets, key: resend-api-key } }
-            - name: EMAIL_FROM
-              valueFrom: { secretKeyRef: { name: capoaberto-secrets, key: email-from } }
             - name: APP_URL
               value: https://capoaberto.lab.mateuseap.com
             - name: API_URL
