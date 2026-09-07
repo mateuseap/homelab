@@ -1,9 +1,15 @@
-# Nightly pg_dump to Cloudflare R2 (S3-compatible). Retention is bounded three
-# ways so the bucket can never exceed the R2 free tier (10 GB): a 14-day age
-# cutoff, a max object count, and a hard total-size cap of 8 GB. If a new dump
-# would push the bucket past the cap even after pruning, the upload is skipped
+# Nightly pg_dump to Cloudflare R2 (S3-compatible), one dump per database on
+# the shared Postgres instance. Retention per database is bounded three ways
+# so the bucket can never exceed the R2 free tier (10 GB): a 14-day age
+# cutoff, a max object count, and a hard total-size cap. If a new dump would
+# push its folder past the cap even after pruning, the upload is skipped
 # (losing that night's backup is preferred over exceeding the free tier).
 # R2 credentials come from the sealed secret r2-backup-credentials.
+#
+# capoaberto_staging (Capo Aberto staging DB, DEC-22) is dumped with the same
+# chesskernel superuser role used to administer this shared instance (never
+# used as the application's own runtime credential) into its own R2 prefix,
+# with a much smaller cap since it is a small staging schema.
 apiVersion: batch/v1
 kind: CronJob
 metadata:
@@ -33,64 +39,75 @@ spec:
               args:
                 - |
                   set -eu
-                  # Free-tier guardrails. The bucket must never exceed the R2
-                  # free tier, so these are enforced before every upload.
-                  MAX_TOTAL_BYTES=8589934592   # 8 GiB, leaves 2 GB margin under 10 GB
-                  MAX_BACKUPS=14               # keep at most this many dumps
-                  MAX_AGE_DAYS=14
-                  PREFIX="s3://${R2_BUCKET}/chesskernel"
                   E="--endpoint-url ${R2_ENDPOINT}"
 
                   apk add --no-cache aws-cli >/dev/null
 
-                  # oldest-first list of keys under the prefix
+                  # oldest-first list of keys under a given R2 folder
                   list_keys() {
-                    aws s3api list-objects-v2 --bucket "$R2_BUCKET" --prefix chesskernel/ \
+                    aws s3api list-objects-v2 --bucket "$R2_BUCKET" --prefix "$1/" \
                       $E --query 'sort_by(Contents,&LastModified)[].Key' --output text 2>/dev/null \
                       | tr '\t' '\n' | grep -v '^None$' || true
                   }
                   total_bytes() {
-                    b=$(aws s3api list-objects-v2 --bucket "$R2_BUCKET" --prefix chesskernel/ \
+                    b=$(aws s3api list-objects-v2 --bucket "$R2_BUCKET" --prefix "$1/" \
                       $E --query 'sum(Contents[].Size)' --output text 2>/dev/null || echo 0)
                     [ "$b" = "None" ] && b=0
                     echo "${b:-0}"
                   }
                   rm_key() { aws s3 rm "s3://${R2_BUCKET}/$1" $E >/dev/null 2>&1 || true; }
 
-                  # 1. prune by age
-                  CUTOFF=$(date -d "@$(( $(date +%s) - MAX_AGE_DAYS*86400 ))" +%F)
-                  list_keys | while read -r k; do
-                    base=$(basename "$k")
-                    [ "$base" \< "chesskernel-${CUTOFF}" ] && rm_key "$k" || true
-                  done
+                  # $1=pg user  $2=db name  $3=R2 folder  $4=max total bytes
+                  # $5=max backups kept  $6=max age in days
+                  backup_db() {
+                    PG_USER="$1"; DB="$2"; FOLDER="$3"
+                    MAX_TOTAL_BYTES="$4"; MAX_BACKUPS="$5"; MAX_AGE_DAYS="$6"
+                    PREFIX="s3://${R2_BUCKET}/${FOLDER}"
 
-                  # 2. prune by count (delete oldest beyond MAX_BACKUPS)
-                  COUNT=$(list_keys | wc -l)
-                  if [ "$COUNT" -gt "$MAX_BACKUPS" ]; then
-                    list_keys | head -n "$(( COUNT - MAX_BACKUPS ))" | while read -r k; do rm_key "$k"; done
-                  fi
+                    # 1. prune by age
+                    CUTOFF=$(date -d "@$(( $(date +%s) - MAX_AGE_DAYS*86400 ))" +%F)
+                    list_keys "$FOLDER" | while read -r k; do
+                      base=$(basename "$k")
+                      [ "$base" \< "${FOLDER}-${CUTOFF}" ] && rm_key "$k" || true
+                    done
 
-                  # take the dump now, measure it
-                  STAMP=$(date +%F)
-                  FILE="/tmp/chesskernel-${STAMP}.sql.gz"
-                  pg_dump -h postgres -U chesskernel chesskernel | gzip > "$FILE"
-                  DUMP_BYTES=$(wc -c < "$FILE")
+                    # 2. prune by count (delete oldest beyond MAX_BACKUPS)
+                    COUNT=$(list_keys "$FOLDER" | wc -l)
+                    if [ "$COUNT" -gt "$MAX_BACKUPS" ]; then
+                      list_keys "$FOLDER" | head -n "$(( COUNT - MAX_BACKUPS ))" | while read -r k; do rm_key "$k"; done
+                    fi
 
-                  # 3. prune oldest until the new dump fits under the size cap
-                  while [ "$(( $(total_bytes) + DUMP_BYTES ))" -gt "$MAX_TOTAL_BYTES" ]; do
-                    OLDEST=$(list_keys | head -n1)
-                    [ -z "$OLDEST" ] && break
-                    echo "size cap: pruning $OLDEST to make room"
-                    rm_key "$OLDEST"
-                  done
+                    # take the dump now, measure it
+                    STAMP=$(date +%F)
+                    FILE="/tmp/${FOLDER}-${STAMP}.sql.gz"
+                    pg_dump -h postgres -U "$PG_USER" "$DB" | gzip > "$FILE"
+                    DUMP_BYTES=$(wc -c < "$FILE")
 
-                  # 4. upload only if it now fits; otherwise skip (prefer loose data)
-                  if [ "$(( $(total_bytes) + DUMP_BYTES ))" -le "$MAX_TOTAL_BYTES" ]; then
-                    aws s3 cp "$FILE" "${PREFIX}/" $E >/dev/null
-                    echo "backup ok: $FILE (${DUMP_BYTES} bytes); bucket now $(total_bytes) bytes"
-                  else
-                    echo "WARNING: skipped upload, a single dump (${DUMP_BYTES} bytes) exceeds the ${MAX_TOTAL_BYTES}-byte cap. No data uploaded, free tier protected."
-                  fi
+                    # 3. prune oldest until the new dump fits under the size cap
+                    while [ "$(( $(total_bytes "$FOLDER") + DUMP_BYTES ))" -gt "$MAX_TOTAL_BYTES" ]; do
+                      OLDEST=$(list_keys "$FOLDER" | head -n1)
+                      [ -z "$OLDEST" ] && break
+                      echo "$FOLDER size cap: pruning $OLDEST to make room"
+                      rm_key "$OLDEST"
+                    done
+
+                    # 4. upload only if it now fits; otherwise skip (prefer loose data)
+                    if [ "$(( $(total_bytes "$FOLDER") + DUMP_BYTES ))" -le "$MAX_TOTAL_BYTES" ]; then
+                      aws s3 cp "$FILE" "${PREFIX}/" $E >/dev/null
+                      echo "$FOLDER backup ok: $FILE (${DUMP_BYTES} bytes); folder now $(total_bytes "$FOLDER") bytes"
+                    else
+                      echo "WARNING: skipped $FOLDER upload, a single dump (${DUMP_BYTES} bytes) exceeds the ${MAX_TOTAL_BYTES}-byte cap. No data uploaded, free tier protected."
+                    fi
+                    rm -f "$FILE"
+                  }
+
+                  # Free-tier guardrails, same as before: 8 GiB / 14 backups / 14 days,
+                  # leaving 2 GB margin under the 10 GB R2 free tier.
+                  backup_db chesskernel chesskernel chesskernel 8589934592 14 14
+
+                  # Capo Aberto staging: small schema-only DB during the MVP (DEC-22),
+                  # so a 512 MiB cap leaves ample combined margin under the free tier.
+                  backup_db chesskernel capoaberto_staging capoaberto-staging 536870912 14 14
               env:
                 - name: PGPASSWORD
                   valueFrom:
