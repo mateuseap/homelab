@@ -17,7 +17,7 @@ spec:
         seccompProfile: { type: RuntimeDefault }
       containers:
         - name: api
-          image: ghcr.io/originlabsbr/capoaberto-api:7242c3c55ed0ccb3083f31f0996a8d22318b6fe0
+          image: ghcr.io/originlabsbr/capoaberto-api:b070cbee0c3c7f8e221d6a2fee40a3a1a39a47ac
           imagePullPolicy: IfNotPresent
           securityContext:
             allowPrivilegeEscalation: false
@@ -31,6 +31,14 @@ spec:
             - name: DATABASE_URL
               valueFrom:
                 secretKeyRef: { name: capoaberto-db, key: DATABASE_URL }
+            - name: ABACATEPAY_API_KEY
+              valueFrom: { secretKeyRef: { name: capoaberto-secrets, key: abacatepay-api-key } }
+            - name: ABACATEPAY_WEBHOOK_SECRET
+              valueFrom: { secretKeyRef: { name: capoaberto-secrets, key: abacatepay-webhook-secret } }
+            - name: RESEND_API_KEY
+              valueFrom: { secretKeyRef: { name: capoaberto-secrets, key: resend-api-key } }
+            - name: EMAIL_FROM
+              valueFrom: { secretKeyRef: { name: capoaberto-secrets, key: email-from } }
             - name: APP_URL
               value: https://capoaberto.lab.mateuseap.com
             - name: API_URL
