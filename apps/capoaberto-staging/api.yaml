@@ -17,7 +17,7 @@ spec:
         seccompProfile: { type: RuntimeDefault }
       containers:
         - name: api
-          image: ghcr.io/originlabsbr/capoaberto-api:d5eab946e58f870199f22f92f63aacb4e74302c3
+          image: ghcr.io/originlabsbr/capoaberto-api:7242c3c55ed0ccb3083f31f0996a8d22318b6fe0
           imagePullPolicy: IfNotPresent
           securityContext:
             allowPrivilegeEscalation: false
@@ -31,6 +31,14 @@ spec:
             - name: DATABASE_URL
               valueFrom:
                 secretKeyRef: { name: capoaberto-db, key: DATABASE_URL }
+            - name: RESEND_API_KEY
+              valueFrom: { secretKeyRef: { name: capoaberto-secrets, key: resend-api-key } }
+            - name: EMAIL_FROM
+              valueFrom: { secretKeyRef: { name: capoaberto-secrets, key: email-from } }
+            - name: APP_URL
+              value: https://capoaberto.lab.mateuseap.com
+            - name: API_URL
+              value: http://api:3001
           resources:
             requests: { cpu: 20m, memory: 64Mi }
             limits: { memory: 192Mi }
