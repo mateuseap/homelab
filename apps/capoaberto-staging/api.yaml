@@ -28,6 +28,9 @@ spec:
               value: production
             - name: VEHICLE_PROVIDER_MODE
               value: mock
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef: { name: capoaberto-db, key: DATABASE_URL }
           resources:
             requests: { cpu: 20m, memory: 64Mi }
             limits: { memory: 192Mi }
