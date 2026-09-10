@@ -17,7 +17,7 @@ spec:
         seccompProfile: { type: RuntimeDefault }
       containers:
         - name: api
-          image: ghcr.io/originlabsbr/capoaberto-api:b7e815b78c4a74e9a40edd982349ed9d41ca1e03
+          image: ghcr.io/originlabsbr/capoaberto-api:fadf1bec138add6e9a5c31f343cdf9963e8aa39f
           imagePullPolicy: IfNotPresent
           securityContext:
             allowPrivilegeEscalation: false
@@ -31,6 +31,20 @@ spec:
             - name: DATABASE_URL
               valueFrom:
                 secretKeyRef: { name: capoaberto-db, key: DATABASE_URL }
+            # Asaas is the active gateway in staging; AbacatePay stays in the
+            # build so a rollback is this value plus a restart.
+            - name: PAYMENT_PROVIDER
+              value: asaas
+            - name: ASAAS_ENV
+              value: sandbox
+            - name: ASAAS_USER_AGENT
+              value: capoaberto
+            - name: ASAAS_API_KEY
+              valueFrom:
+                secretKeyRef: { name: capoaberto-asaas, key: ASAAS_API_KEY }
+            - name: ASAAS_WEBHOOK_AUTH_TOKEN
+              valueFrom:
+                secretKeyRef: { name: capoaberto-asaas, key: ASAAS_WEBHOOK_AUTH_TOKEN }
             - name: ABACATEPAY_API_KEY
               valueFrom: { secretKeyRef: { name: capoaberto-secrets, key: abacatepay-api-key } }
             - name: ABACATEPAY_WEBHOOK_SECRET
