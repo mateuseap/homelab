@@ -54,7 +54,7 @@ spec:
             - name: EMAIL_FROM
               valueFrom: { secretKeyRef: { name: capoaberto-secrets, key: email-from } }
             - name: APP_URL
-              value: https://capoaberto.lab.mateuseap.com
+              value: https://staging.capoaberto.com.br
             - name: API_URL
               value: http://api:3001
           resources:
