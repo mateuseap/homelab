@@ -29,6 +29,15 @@ metadata:
 spec:
   ingressClassName: traefik
   rules:
+    - host: staging.capoaberto.com.br
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: web
+                port: { number: 3000 }
     - host: capoaberto.lab.mateuseap.com
       http:
         paths:
@@ -39,6 +48,8 @@ spec:
                 name: web
                 port: { number: 3000 }
   tls:
+    - hosts: [staging.capoaberto.com.br]
+      secretName: capoaberto-staging-canonical-tls
     - hosts: [capoaberto.lab.mateuseap.com]
       secretName: capoaberto-staging-tls
 ---
@@ -53,6 +64,15 @@ metadata:
 spec:
   ingressClassName: traefik
   rules:
+    - host: staging.capoaberto.com.br
+      http:
+        paths:
+          - path: /api
+            pathType: Prefix
+            backend:
+              service:
+                name: api
+                port: { number: 3001 }
     - host: capoaberto.lab.mateuseap.com
       http:
         paths:
@@ -63,5 +83,7 @@ spec:
                 name: api
                 port: { number: 3001 }
   tls:
+    - hosts: [staging.capoaberto.com.br]
+      secretName: capoaberto-staging-canonical-tls
     - hosts: [capoaberto.lab.mateuseap.com]
       secretName: capoaberto-staging-tls
