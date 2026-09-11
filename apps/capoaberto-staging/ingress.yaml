@@ -18,6 +18,10 @@ spec:
     prefixes:
       - /api
 ---
+# Canonical staging host and the legacy lab host are separate Ingress objects on
+# purpose. Traefik drops TLS for a whole Ingress when any one of its referenced
+# secrets is missing, so sharing an object meant a pending certificate for the
+# new domain also took the working lab certificate offline.
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
@@ -38,20 +42,9 @@ spec:
               service:
                 name: web
                 port: { number: 3000 }
-    - host: capoaberto.lab.mateuseap.com
-      http:
-        paths:
-          - path: /
-            pathType: Prefix
-            backend:
-              service:
-                name: web
-                port: { number: 3000 }
   tls:
     - hosts: [staging.capoaberto.com.br]
       secretName: capoaberto-staging-canonical-tls
-    - hosts: [capoaberto.lab.mateuseap.com]
-      secretName: capoaberto-staging-tls
 ---
 apiVersion: networking.k8s.io/v1
 kind: Ingress
@@ -73,6 +66,45 @@ spec:
               service:
                 name: api
                 port: { number: 3001 }
+  tls:
+    - hosts: [staging.capoaberto.com.br]
+      secretName: capoaberto-staging-canonical-tls
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: capoaberto-staging-legacy
+  namespace: capoaberto-staging
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    traefik.ingress.kubernetes.io/router.middlewares: capoaberto-staging-no-index@kubernetescrd
+spec:
+  ingressClassName: traefik
+  rules:
+    - host: capoaberto.lab.mateuseap.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: web
+                port: { number: 3000 }
+  tls:
+    - hosts: [capoaberto.lab.mateuseap.com]
+      secretName: capoaberto-staging-tls
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: capoaberto-staging-legacy-api
+  namespace: capoaberto-staging
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    traefik.ingress.kubernetes.io/router.middlewares: capoaberto-staging-strip-api-prefix@kubernetescrd,capoaberto-staging-no-index@kubernetescrd
+spec:
+  ingressClassName: traefik
+  rules:
     - host: capoaberto.lab.mateuseap.com
       http:
         paths:
@@ -83,7 +115,5 @@ spec:
                 name: api
                 port: { number: 3001 }
   tls:
-    - hosts: [staging.capoaberto.com.br]
-      secretName: capoaberto-staging-canonical-tls
     - hosts: [capoaberto.lab.mateuseap.com]
       secretName: capoaberto-staging-tls
