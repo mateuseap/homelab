@@ -23,7 +23,7 @@ spec:
       # never fall behind the code it ships with (capoaberto #153).
       initContainers:
         - name: migrate
-          image: ghcr.io/originlabsbr/capoaberto-api:6ebf95e1f7e98abed53949287ec03fa559c03e42
+          image: ghcr.io/originlabsbr/capoaberto-api:74e9d1a3cc413010d50d53c89331f9b0ad953b60
           imagePullPolicy: IfNotPresent
           command: [/app/node_modules/.bin/node-pg-migrate, up, -m, migrations, -j, sql]
           securityContext:
@@ -38,7 +38,7 @@ spec:
             limits: { memory: 192Mi }
       containers:
         - name: api
-          image: ghcr.io/originlabsbr/capoaberto-api:6ebf95e1f7e98abed53949287ec03fa559c03e42
+          image: ghcr.io/originlabsbr/capoaberto-api:74e9d1a3cc413010d50d53c89331f9b0ad953b60
           imagePullPolicy: IfNotPresent
           securityContext:
             allowPrivilegeEscalation: false
