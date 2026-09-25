@@ -30,6 +30,10 @@ spec:
           env:
             - name: NEXT_PUBLIC_ENV
               value: staging
+            # Cloudflare's always-pass Turnstile test key: staging never
+            # challenges and never counts against the production widget.
+            - name: TURNSTILE_SITE_KEY
+              value: 1x00000000000000000000AA
             # Server components render on the pod, so they need the in-cluster
             # API address. Without it the default localhost target is refused.
             - name: API_URL

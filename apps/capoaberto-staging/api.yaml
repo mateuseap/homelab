@@ -59,6 +59,8 @@ spec:
             - name: RAW_SUPPLIER_KEY
               valueFrom:
                 secretKeyRef: { name: capoaberto-raw-vault, key: RAW_SUPPLIER_KEY }
+            - name: TURNSTILE_SECRET_KEY
+              valueFrom: { secretKeyRef: { name: capoaberto-turnstile, key: TURNSTILE_SECRET_KEY } }
             - name: DATABASE_URL
               valueFrom:
                 secretKeyRef: { name: capoaberto-db, key: DATABASE_URL }
