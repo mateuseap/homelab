@@ -21,7 +21,7 @@ spec:
         seccompProfile: { type: RuntimeDefault }
       containers:
         - name: web
-          image: ghcr.io/originlabsbr/capoaberto-web:0c4429b16ae79738deb8e36869ece2ac80d16a3c
+          image: ghcr.io/originlabsbr/capoaberto-web:1a943d65b624095e1ac2eaae516e0165bcc9fd65
           imagePullPolicy: IfNotPresent
           securityContext:
             allowPrivilegeEscalation: false
@@ -30,6 +30,8 @@ spec:
           env:
             - { name: NEXT_PUBLIC_ENV, value: production }
             - { name: API_URL, value: http://api:3001 }
+            # Public Turnstile site key for the free preview and sign up.
+            - { name: TURNSTILE_SITE_KEY, value: 0x4AAAAAAFDk9aUrsQ0skkfg }
           resources:
             requests: { cpu: 20m, memory: 64Mi }
             limits: { memory: 192Mi }

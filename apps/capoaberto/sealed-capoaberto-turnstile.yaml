@@ -1,0 +1,16 @@
+---
+apiVersion: bitnami.com/v1alpha1
+kind: SealedSecret
+metadata:
+  creationTimestamp: null
+  name: capoaberto-turnstile
+  namespace: capoaberto
+spec:
+  encryptedData:
+    TURNSTILE_SECRET_KEY: AgCZgoiKUAnysiNPWU2Iv7OiUxwdz8YUDQIrnLD5aGraBppyeu4l5FE8cGTj2fPLnUzz+l8+EM8MAyJG1liAi9g91Td6MyDqY8NkxSgnJvQHAGWsIoUYdhMx5vDAgPf2wYQ997daBYlg2ikd6CxL/uDT59EstE/y91pRvTqAuQBRN1PnhRJhGi6i3MBJufGy4UKGg4Pnn0ZG0NrFfHQciidHzAIGc9faSk4fFyxLjtqospYPEZ+BGcSSJUzZohrEBbR6KeiIWOIvvXD7U62ORDRNe9+jXxWdMoJTif61WUnPynfH5QMYPzTX9xhzu4ZpOSjtTvgnVu8cXaGSIBN7HLE2NiLCU+85Fu4B9UJy3sVtr5R1C7eKshZbacwz/90jpj7Ee9d+V/eqEQm8Rv2sKlOz0zTVV7qcTFgYn0ivL9Z236hTOv6duvuIY+wUpoZb/aDqhKh9KcCitHyMmwDyC4MftEOZsfEnX+M9hc5OxEXJj2snWFQQ2R7Is+g6/EfpLrA5zPWGz/OqZYAPVpeMssKb0Klv5aLQnRmVnG7KlPiU7G2OSTZHkHP4dJr0THhWxL9lVhVFfdRQlToaavR62s3vcyeuHgOSuHEQ6Nhh57aNj9S1FxuEJvpPRqpSzTJlJdfotBWWFng8n11CIEcrxtKwD8LgFCyMwoVyo/FL/5PZC/f9LPr1bLx5UE1wpxDRt0FJ8ka5EsJZSi/aRnOtyqFry1QWLVhJuBWvfG7qL4KTLN4YZQ==
+  template:
+    metadata:
+      creationTimestamp: null
+      name: capoaberto-turnstile
+      namespace: capoaberto
+    type: Opaque

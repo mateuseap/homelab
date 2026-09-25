@@ -23,7 +23,7 @@ spec:
       # never fall behind the code it ships with (capoaberto #153).
       initContainers:
         - name: migrate
-          image: ghcr.io/originlabsbr/capoaberto-api:e5330fbbb73245389be481bcd04a0dd412af3b39
+          image: ghcr.io/originlabsbr/capoaberto-api:1a943d65b624095e1ac2eaae516e0165bcc9fd65
           imagePullPolicy: IfNotPresent
           command: [/app/node_modules/.bin/node-pg-migrate, up, -m, migrations, -j, sql]
           securityContext:
@@ -38,7 +38,7 @@ spec:
             limits: { memory: 192Mi }
       containers:
         - name: api
-          image: ghcr.io/originlabsbr/capoaberto-api:e5330fbbb73245389be481bcd04a0dd412af3b39
+          image: ghcr.io/originlabsbr/capoaberto-api:1a943d65b624095e1ac2eaae516e0165bcc9fd65
           imagePullPolicy: IfNotPresent
           securityContext:
             allowPrivilegeEscalation: false
@@ -47,12 +47,16 @@ spec:
           env:
             - { name: NODE_ENV, value: production }
             - { name: VEHICLE_PROVIDER_MODE, value: api-brasil }
+            # All supplier preview lookups per day; stays above the 300 anonymous ceiling.
+            - { name: PREVIEW_DAILY_LOOKUPS, value: "600" }
             - name: API_BRASIL_BEARER_TOKEN
               valueFrom: { secretKeyRef: { name: capoaberto-api-brasil, key: API_BRASIL_BEARER_TOKEN } }
             # Encrypts the unparsed supplier answer at rest (admin raw download).
             - name: RAW_SUPPLIER_KEY
               valueFrom:
                 secretKeyRef: { name: capoaberto-raw-vault, key: RAW_SUPPLIER_KEY }
+            - name: TURNSTILE_SECRET_KEY
+              valueFrom: { secretKeyRef: { name: capoaberto-turnstile, key: TURNSTILE_SECRET_KEY } }
             - name: DATABASE_URL
               valueFrom: { secretKeyRef: { name: capoaberto-db, key: DATABASE_URL } }
             - { name: PAYMENT_PROVIDER, value: asaas }
