@@ -21,7 +21,7 @@ spec:
         seccompProfile: { type: RuntimeDefault }
       containers:
         - name: web
-          image: ghcr.io/originlabsbr/capoaberto-web:8acfb6d24d9be324e4a4f7597ee10cf633b15319
+          image: ghcr.io/originlabsbr/capoaberto-web:7fa3b29b1b8873101cc71e5c764e0eca15fc80dd
           imagePullPolicy: IfNotPresent
           securityContext:
             allowPrivilegeEscalation: false
