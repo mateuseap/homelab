@@ -1,6 +1,7 @@
 # ADR-007: Host WireGuard Hub
 
-**Status:** Accepted  
+**Status:** Accepted
+
 **Date:** 2026-10-15
 
 ## Context

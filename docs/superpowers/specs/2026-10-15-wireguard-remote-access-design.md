@@ -1,6 +1,7 @@
 # WireGuard Remote Access Design
 
-**Date:** 2026-10-15  
+**Date:** 2026-10-15
+
 **Status:** Approved for implementation
 
 ## Purpose
