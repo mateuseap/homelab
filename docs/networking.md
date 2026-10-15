@@ -108,3 +108,9 @@ Traefik proxies HTTP, HTTPS, and WebSocket by host, but it cannot proxy arbitrar
 Because the LiveKit pod binds host ports, only one replica can run, so its Deployment uses `strategy: Recreate` and `enableServiceLinks: false` (the injected `LIVEKIT_PORT` service-link env would otherwise crash the server). `use_external_ip: true` makes LiveKit advertise the node's public IP for media.
 
 A new or migrated node must allow `7882/udp` and `7881/tcp` in any provider-level firewall, alongside 80 and 443. See the [security doc](security/security.md) for the recommended firewall posture.
+
+## WireGuard remote-access network
+
+The host-level WireGuard hub listens directly on `51820/udp`, outside Traefik and k3s. It uses `10.88.0.0/24`, with the VPS at `.1`, Omarchy workstation at `.2`, and MacBook at `.3`. Client routes contain only these VPN addresses. No default route or NAT uses the tunnel.
+
+Host firewall rules allow forwarding only from `wg0` back to `wg0` and drop traffic entering `wg0` that would leave another interface. VPN peers therefore cannot use the VPS to reach pod, service, Docker, or public networks. See [WireGuard Remote Access](operations/wireguard-remote-access.md) and [ADR-007](adr/007-host-wireguard-hub.md).

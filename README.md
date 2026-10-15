@@ -180,6 +180,7 @@ Point `*.lab.yourdomain.com` at the machine, seal your secrets, restore the late
 | [Networking](docs/networking.md) | Wildcard DNS, Traefik SNI routing, hostname map, LiveKit media exception |
 | [Security](docs/security/security.md) | Sealed-secrets model, TLS, host hardening, single-node tradeoffs |
 | [Adding an App](docs/operations/adding-an-app.md) | Manifests, Application, sealed secret, ingress, ServiceMonitor, upgrades |
+| [WireGuard Remote Access](docs/operations/wireguard-remote-access.md) | Host VPN, peer lifecycle, Omarchy, WayVNC, and legacy Mac guidance |
 | [Runbook](docs/RUNBOOK.md) | Bootstrap, migrate, restore, deploy, troubleshoot |
 | [Design Spec](docs/specs/) | Original platform design note and rationale |
 | [References](docs/references.md) | Curated study links for every technology in the stack |

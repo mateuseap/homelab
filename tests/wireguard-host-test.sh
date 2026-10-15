@@ -132,4 +132,27 @@ grep -Fq 'PersistentKeepalive = 25' <<< "$rendered" || fail "render missing keep
 assert_count "$STATE/rules" 'homelab-wireguard' 0
 assert_file "$ROOTFS/etc/wireguard/server.key"
 
+OMARCHY="$ROOT/docs/examples/wireguard/omarchy.conf.example"
+MACBOOK="$ROOT/docs/examples/wireguard/macbook.conf.example"
+GUIDE="$ROOT/docs/operations/wireguard-remote-access.md"
+ADR="$ROOT/docs/adr/007-host-wireguard-hub.md"
+for file in "$OMARCHY" "$MACBOOK" "$GUIDE" "$ADR"; do
+  assert_file "$file"
+done
+assert_contains "$OMARCHY" 'Address = 10.88.0.2/32'
+assert_contains "$OMARCHY" 'AllowedIPs = 10.88.0.1/32, 10.88.0.3/32'
+assert_contains "$MACBOOK" 'Address = 10.88.0.3/32'
+assert_contains "$MACBOOK" 'AllowedIPs = 10.88.0.1/32, 10.88.0.2/32'
+assert_contains "$OMARCHY" 'PersistentKeepalive = 25'
+assert_contains "$MACBOOK" 'PersistentKeepalive = 25'
+assert_contains "$GUIDE" 'address=127.0.0.1'
+assert_contains "$GUIDE" 'ssh -N -L 5900:127.0.0.1:5900'
+assert_contains "$ROOT/.gitignore" '*.wireguard.conf'
+for file in "$ROOT/README.md" "$ROOT/docs/RUNBOOK.md" "$ROOT/docs/security/security.md" "$ROOT/docs/networking.md"; do
+  assert_contains "$file" 'wireguard-remote-access.md'
+done
+if grep -REq '^PrivateKey = [A-Za-z0-9+/]{43}=$' "$ROOT/docs"; then
+  fail "documentation contains a real-looking private key"
+fi
+
 printf 'PASS: WireGuard host scripts satisfy safety and idempotency contract\n'
