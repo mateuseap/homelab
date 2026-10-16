@@ -7,6 +7,7 @@ umask 077
 JUMP_USER="wgjump"
 JUMP_TARGET="10.88.0.2:22"
 WG_ROOT=${WG_ROOT:-}
+SSHD_DROPIN="$WG_ROOT/etc/ssh/sshd_config.d/10-wgjump.conf"
 
 die() { printf '[wireguard-jump] ERROR: %s\n' "$*" >&2; exit 1; }
 log() { printf '[wireguard-jump] %s\n' "$*"; }
@@ -17,6 +18,25 @@ ensure_user() {
 }
 
 home_dir() { getent passwd "$JUMP_USER" | cut -d: -f6; }
+
+install_sshd_policy() {
+  install -d -m 755 "$(dirname "$SSHD_DROPIN")"
+  cat > "$SSHD_DROPIN.tmp" <<EOF
+Match User $JUMP_USER
+    PasswordAuthentication no
+    KbdInteractiveAuthentication no
+    AllowTcpForwarding local
+    PermitOpen $JUMP_TARGET
+    GatewayPorts no
+    PermitTTY no
+    X11Forwarding no
+    PermitTunnel no
+EOF
+  chmod 600 "$SSHD_DROPIN.tmp"
+  mv "$SSHD_DROPIN.tmp" "$SSHD_DROPIN"
+  sshd -t || die "sshd policy validation failed"
+  systemctl reload ssh
+}
 
 set_key() {
   local key=$1 check ssh_dir auth
@@ -34,7 +54,8 @@ set_key() {
   chmod 600 "$auth.tmp"
   mv "$auth.tmp" "$auth"
   chown -R "$JUMP_USER:$JUMP_USER" "$ssh_dir"
-  log "$JUMP_USER may only forward to $JUMP_TARGET"
+  install_sshd_policy
+  log "$JUMP_USER may only use local forwarding to $JUMP_TARGET"
 }
 
 revoke() {
