@@ -117,7 +117,11 @@ exit 0
 SH
 cat > "$BIN/wg-quick" <<'SH'
 #!/usr/bin/env bash
-[[ "$1" == strip ]] && cat "$2"
+[[ "$1" == strip ]] || exit 0
+# Real wg-quick rejects paths whose basename is not <interface>.conf.
+[[ $(basename "$2") =~ ^[a-zA-Z0-9_=+.-]{1,15}\.conf$ && $(basename "$2") != .* ]] || {
+  echo "wg-quick: The config file must be a valid interface name, followed by .conf" >&2; exit 1; }
+cat "$2"
 SH
 cat > "$BIN/wg" <<'SH'
 #!/usr/bin/env bash

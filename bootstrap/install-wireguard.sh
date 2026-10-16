@@ -83,7 +83,13 @@ EOF
 
 validate_config() {
   local config=$1
-  wg-quick strip "$config" >/dev/null || die "invalid WireGuard configuration"
+  local scratch status=0
+  # wg-quick only accepts paths named <interface>.conf.
+  scratch=$(mktemp -d "$WG_DIR/.validate.XXXXXX")
+  cp "$config" "$scratch/$WG_INTERFACE.conf"
+  wg-quick strip "$scratch/$WG_INTERFACE.conf" >/dev/null || status=$?
+  rm -rf "$scratch"
+  (( status == 0 )) || die "invalid WireGuard configuration"
 }
 
 check() {

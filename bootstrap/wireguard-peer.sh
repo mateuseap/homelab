@@ -46,14 +46,19 @@ without_peer() {
   ' "$source" > "$destination"
 }
 
-validate_candidate() {
-  local candidate=$1
-  wg-quick strip "$candidate" >/dev/null || die "candidate configuration invalid"
+# wg-quick only accepts paths named <interface>.conf, so strip a copy.
+strip_config() {
+  local source=$1 scratch status=0
+  scratch=$(mktemp -d "$WG_DIR/.strip.XXXXXX")
+  cp "$source" "$scratch/$WG_INTERFACE.conf"
+  wg-quick strip "$scratch/$WG_INTERFACE.conf" || status=$?
+  rm -rf "$scratch"
+  return "$status"
 }
 
 apply_candidate() {
   local candidate=$1 runtime
-  validate_candidate "$candidate"
+  strip_config "$candidate" >/dev/null || die "candidate configuration invalid"
   chmod 600 "$candidate"
   if cmp -s "$candidate" "$WG_CONFIG"; then
     rm -f "$candidate"
@@ -62,7 +67,7 @@ apply_candidate() {
   if systemctl is-active --quiet "wg-quick@$WG_INTERFACE"; then
     runtime=$(mktemp "$WG_DIR/.wg0.runtime.XXXXXX")
     trap 'rm -f "${runtime:-}"' RETURN
-    wg-quick strip "$candidate" > "$runtime"
+    strip_config "$candidate" > "$runtime"
     if ! wg syncconf "$WG_INTERFACE" "$runtime"; then
       rm -f "$runtime"
       trap - RETURN
