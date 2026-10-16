@@ -154,6 +154,13 @@ sudo ./bootstrap/wireguard-peer.sh add macbook '<PUBLIC_KEY>'
 sudo ./bootstrap/wireguard-peer.sh revoke omarchy
 ```
 
+The High Sierra MacBook does not run WireGuard; it reaches the workstation through a no-shell VPS jump user limited to `10.88.0.2:22`:
+
+```bash
+sudo ./bootstrap/wireguard-jump.sh set 'ssh-ed25519 AAAA... macbook'
+sudo ./bootstrap/wireguard-jump.sh revoke
+```
+
 Rollback disables WireGuard and removes only its labeled rules while retaining protected keys and configuration:
 
 ```bash
