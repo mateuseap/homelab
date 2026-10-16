@@ -73,6 +73,12 @@ The following was applied directly on the VPS on 2026-07-23:
 - **node-exporter (9100) is firewalled to the pod network.** It had been exposed unauthenticated to the public internet, disclosing host CPU, memory, disk, and network metrics. Targeted iptables rules now ACCEPT from `10.42.0.0/16` (pods) and `127.0.0.0/8` and DROP everyone else, persisted with netfilter-persistent. External access was verified blocked and the Prometheus scrape verified still healthy (`up{job="node-exporter"} = 1`). (Was: MEDIUM. Fixed.)
 - **fail2ban** is installed with an sshd jail (4 retries, 1 hour ban) as defense in depth.
 
+## WireGuard remote administration
+
+The VPS runs a host-level WireGuard hub on `51820/udp` for the Omarchy workstation and MacBook. Each device has an individual key pair; private keys stay on that device and outside Git. The VPN uses `10.88.0.0/24` with fixed `/32` peer routes and no NAT or default route.
+
+A dedicated nftables table evaluated before all k3s and Docker iptables chains drops traffic from `wg0` toward every other interface, so only authenticated peer-to-peer forwarding on `wg0` is possible. WireGuard rules are reapplied by their own systemd unit and never persisted through a full `netfilter-persistent save`. This prevents use as an open relay or route into k3s and Docker networks. WayVNC remains bound to loopback on the workstation and is reached through SSH over WireGuard. Deployment, revocation, rollback, and client compatibility details live in [WireGuard Remote Access](../operations/wireguard-remote-access.md).
+
 ## Pending items
 
 - **Rotate the Cloudflare R2 token.** It transited an external channel during setup. Rotate it in the Cloudflare dashboard and re-seal `r2-backup-credentials`.

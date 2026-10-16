@@ -135,6 +135,33 @@ Interpret failures by boundary:
 
 Before upgrade or recovery, back up Deployment, Ingress, and `/data/db/data.sqlite*`. Roll back image or manifests with the saved YAML, then verify the same health and stream checks. Never write credentials or database copies into Git.
 
+## WireGuard remote access
+
+WireGuard is host infrastructure, not a Kubernetes workload. Its desired state and idempotent automation are versioned here, but the released script must run on the VPS through SSH because ArgoCD cannot manage host packages, systemd, `/etc/wireguard`, or persistent iptables rules.
+
+Deploy or validate:
+
+```bash
+sudo ./bootstrap/install-wireguard.sh
+sudo ./bootstrap/install-wireguard.sh --check
+```
+
+Enroll or revoke public client keys:
+
+```bash
+sudo ./bootstrap/wireguard-peer.sh add omarchy '<PUBLIC_KEY>'
+sudo ./bootstrap/wireguard-peer.sh add macbook '<PUBLIC_KEY>'
+sudo ./bootstrap/wireguard-peer.sh revoke omarchy
+```
+
+Rollback disables WireGuard and removes only its labeled rules while retaining protected keys and configuration:
+
+```bash
+sudo ./bootstrap/install-wireguard.sh --uninstall
+```
+
+Full preflight, backup, client setup, WayVNC tunnel, diagnosis, and recovery procedures: [WireGuard Remote Access](operations/wireguard-remote-access.md).
+
 ## Troubleshooting quickies
 
 | Symptom | Check |

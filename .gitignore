@@ -3,6 +3,8 @@ secrets.yaml
 *.secret.yaml
 sealing-key-backup.yaml
 *.sql.gz
+*.wireguard.conf
+wireguard-private.key
 
 # Local Claude worktrees are per-machine state, never committed.
 .claude/worktrees/
