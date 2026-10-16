@@ -13,7 +13,7 @@ bash -n "$JUMP"
 
 ROOTFS="$TMP/rootfs"
 BIN="$TMP/bin"
-mkdir -p "$ROOTFS/etc" "$BIN"
+mkdir -p "$ROOTFS/etc/ssh/sshd_config.d" "$BIN"
 : > "$ROOTFS/etc/passwd"
 
 cat > "$BIN/useradd" <<'SH'
@@ -30,6 +30,14 @@ cat > "$BIN/getent" <<'SH'
 grep "^$2:" "$WG_ROOT/etc/passwd"
 SH
 cat > "$BIN/chown" <<'SH'
+#!/usr/bin/env bash
+exit 0
+SH
+cat > "$BIN/sshd" <<'SH'
+#!/usr/bin/env bash
+exit 0
+SH
+cat > "$BIN/systemctl" <<'SH'
 #!/usr/bin/env bash
 exit 0
 SH
@@ -54,6 +62,14 @@ if "$JUMP" set "$KEY"$'\n'"$KEY" 2>/dev/null; then fail "multi-line key accepted
 expected="restrict,port-forwarding,permitopen=\"10.88.0.2:22\" $KEY"
 [[ $(cat "$AUTH") == "$expected" ]] || fail "authorized_keys line wrong: $(cat "$AUTH")"
 [[ $(stat -c '%a' "$AUTH") == 600 ]] || fail "authorized_keys mode not 600"
+DROPIN="$ROOTFS/etc/ssh/sshd_config.d/10-wgjump.conf"
+[[ -f "$DROPIN" ]] || fail "sshd drop-in missing"
+grep -Fq 'Match User wgjump' "$DROPIN" || fail "drop-in missing Match User"
+grep -Fq 'AllowTcpForwarding local' "$DROPIN" || fail "remote forwarding still permitted"
+grep -Fq 'PermitOpen 10.88.0.2:22' "$DROPIN" || fail "PermitOpen missing"
+grep -Fq 'PermitTTY no' "$DROPIN" || fail "TTY still permitted"
+grep -Fq 'X11Forwarding no' "$DROPIN" || fail "X11 forwarding still permitted"
+grep -Fq 'PermitTunnel no' "$DROPIN" || fail "SSH tunnel devices still permitted"
 grep -q '^wgjump:.*:/usr/sbin/nologin$' "$ROOTFS/etc/passwd" || fail "wgjump must use nologin"
 
 "$JUMP" set "$KEY"
