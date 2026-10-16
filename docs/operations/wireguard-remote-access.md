@@ -103,11 +103,23 @@ sudo /root/homelab/bootstrap/wireguard-peer.sh add omarchy '<OMARCHY_PUBLIC_KEY>
 
 ### Omarchy firewall
 
-Omarchy enables UFW with default-deny incoming. Permit SSH only from the MacBook VPN address on `wg0`:
+Omarchy enables UFW with default-deny incoming. Permit SSH only on `wg0`, from the source the MacBook actually uses:
 
 ```bash
-sudo ufw allow in on wg0 proto tcp from 10.88.0.3 to 10.88.0.2 port 22 comment 'SSH from WireGuard MacBook'
+# Active path: High Sierra MacBook through the VPS SSH jump (connections arrive from 10.88.0.1)
+sudo ufw allow in on wg0 proto tcp from 10.88.0.1 to 10.88.0.2 port 22 comment 'SSH via VPS jump'
+# Alternative path: MacBook running Linux as WireGuard peer 10.88.0.3
+# sudo ufw allow in on wg0 proto tcp from 10.88.0.3 to 10.88.0.2 port 22 comment 'SSH from WireGuard MacBook'
 sudo ufw status numbered
+```
+
+Make the workstation `sshd` key-only before enabling it:
+
+```bash
+printf 'PasswordAuthentication no\nKbdInteractiveAuthentication no\nPermitRootLogin no\n' | sudo tee /etc/ssh/sshd_config.d/10-wireguard-only.conf
+sudo sshd -t
+# Add the MacBook public key to ~/.ssh/authorized_keys first, then:
+sudo systemctl enable --now sshd
 ```
 
 Do not add a generic public `22/tcp` allowance. If an existing SSH rule already provides broader access, review it separately rather than changing it as part of this setup.
@@ -130,7 +142,67 @@ Primary references:
 - [MacPorts wireguard-go](https://ports.macports.org/port/wireguard-go/)
 - [MacPorts wireguard-tools](https://ports.macports.org/port/wireguard-tools/)
 
-### Recommended path: Linux
+### Active path: High Sierra through the VPS SSH jump
+
+The MacBook stays on High Sierra and does not run WireGuard. It uses the system OpenSSH client to reach the workstation through the VPS, and the workstation reaches the VPS over WireGuard:
+
+```text
+MacBook --SSH--> VPS wgjump --WireGuard--> Omarchy 10.88.0.2:22 --> WayVNC 127.0.0.1:5900
+```
+
+The SSH session is end-to-end encrypted between the MacBook and the workstation; the VPS only relays TCP. The VPS user `wgjump` has no shell, and its single authorized key carries `restrict,port-forwarding,permitopen="10.88.0.2:22"`, so it can open nothing else.
+
+Set or rotate the MacBook key on the VPS (ed25519 only):
+
+```bash
+sudo /root/homelab/bootstrap/wireguard-jump.sh set 'ssh-ed25519 AAAA... macbook'
+sudo /root/homelab/bootstrap/wireguard-jump.sh revoke
+```
+
+On the MacBook, generate a passphrase-protected key and store the passphrase in the Keychain:
+
+```bash
+ssh-keygen -t ed25519 -a 100
+ssh-add -K ~/.ssh/id_ed25519
+cat ~/.ssh/id_ed25519.pub
+```
+
+Add to `~/.ssh/config` (OpenSSH 7.6 on High Sierra supports `ProxyJump`):
+
+```text
+Host vps-jump
+  HostName 179.197.71.43
+  User wgjump
+  IdentityFile ~/.ssh/id_ed25519
+  UseKeychain yes
+  AddKeysToAgent yes
+
+Host omarchy
+  HostName 10.88.0.2
+  User mateuseap
+  ProxyJump vps-jump
+  IdentityFile ~/.ssh/id_ed25519
+  UseKeychain yes
+  AddKeysToAgent yes
+
+Host omarchy-vnc
+  HostName 10.88.0.2
+  User mateuseap
+  ProxyJump vps-jump
+  IdentityFile ~/.ssh/id_ed25519
+  LocalForward 5901 127.0.0.1:5900
+```
+
+Use local port `5901` because macOS Screen Sharing refuses `localhost:5900`. Remote desktop:
+
+```bash
+ssh -N omarchy-vnc
+open vnc://localhost:5901
+```
+
+Accepted risk: High Sierra receives no security updates. A compromised MacBook exposes its SSH key, which can reach only the workstation's `sshd`. Revoke with `wireguard-jump.sh revoke` and by removing the key from the workstation `~/.ssh/authorized_keys`. The VPS fail2ban jail bans an IP after four failed attempts.
+
+### Alternative path: Linux
 
 Install a maintained Linux distribution, preferably Debian with Xfce or Fedora Xfce for low graphics demand. The Early 2011 model may require the proprietary Broadcom `wl` driver for BCM4331 Wi-Fi. Keep Ethernet or a supported USB Wi-Fi adapter available during installation. MacBookPro8,1 uses Intel HD 3000; MacBookPro8,2 and 8,3 also have TeraScale-era AMD graphics. Use `i915` for Intel and `radeon`, not `amdgpu`, for those AMD GPUs. Hyprland is not recommended on this hardware; Xfce offers a safer baseline.
 
