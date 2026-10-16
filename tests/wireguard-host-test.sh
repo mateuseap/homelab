@@ -23,6 +23,10 @@ assert_contains "$INSTALL" 'umask 077'
 assert_not_contains "$INSTALL" 'MASQUERADE'
 assert_not_contains "$INSTALL" '0.0.0.0/0'
 assert_not_contains "$INSTALL" '::/0'
+assert_not_contains "$INSTALL" 'netfilter-persistent save'
+assert_contains "$INSTALL" 'type filter hook forward priority -10'
+assert_contains "$INSTALL" 'oifname != "$WG_INTERFACE" drop'
+assert_contains "$INSTALL" 'wireguard-firewall.service'
 
 ROOTFS="$TMP/rootfs"
 STATE="$TMP/state"
@@ -40,30 +44,69 @@ cat > "$BIN/iptables" <<'SH'
 set -e
 state="$WG_TEST_STATE/rules"
 op=$1
-chain=$2
-shift 2
-rule="$chain $*"
 case "$op" in
-  -C) grep -Fxq -- "$rule" "$state" ;;
-  -A|-I) grep -Fxq -- "$rule" "$state" || printf '%s\n' "$rule" >> "$state" ;;
-  -D) grep -Fxv -- "$rule" "$state" > "$state.tmp" || true; mv "$state.tmp" "$state" ;;
+  -N)
+    chain=$2
+    grep -Fxq -- "CHAIN $chain" "$state" || printf 'CHAIN %s\n' "$chain" >> "$state"
+    ;;
+  -F)
+    chain=$2
+    grep -Fvx -- "CHAIN $chain" "$state" | grep -Fv -- "$chain " > "$state.tmp" || true
+    printf 'CHAIN %s\n' "$chain" >> "$state.tmp"
+    mv "$state.tmp" "$state"
+    ;;
+  -X)
+    chain=$2
+    grep -Fvx -- "CHAIN $chain" "$state" | grep -Fv -- "$chain " > "$state.tmp" || true
+    mv "$state.tmp" "$state"
+    ;;
+  -S)
+    chain=$2
+    grep -F -- "$chain " "$state" | sed "s/^$chain /-A $chain /"
+    ;;
+  -C|-A|-I|-D)
+    chain=$2
+    shift 2
+    [[ $op != -I || ${1:-} != 1 ]] || shift
+    rule="$chain $*"
+    case "$op" in
+      -C) grep -Fxq -- "$rule" "$state" ;;
+      -A) grep -Fxq -- "$rule" "$state" || printf '%s\n' "$rule" >> "$state" ;;
+      -I)
+        if ! grep -Fxq -- "$rule" "$state"; then
+          { printf '%s\n' "$rule"; cat "$state"; } > "$state.tmp"
+          mv "$state.tmp" "$state"
+        fi ;;
+      -D) grep -Fxv -- "$rule" "$state" > "$state.tmp" || true; mv "$state.tmp" "$state" ;;
+    esac
+    ;;
   *) exit 2 ;;
 esac
-SH
-cat > "$BIN/netfilter-persistent" <<'SH'
-#!/usr/bin/env bash
-printf 'netfilter-persistent %s\n' "$*" >> "$WG_TEST_STATE/log"
 SH
 cat > "$BIN/systemctl" <<'SH'
 #!/usr/bin/env bash
 printf 'systemctl %s\n' "$*" >> "$WG_TEST_STATE/log"
 case "$1" in
+  enable)
+    if [[ "$*" == *wireguard-firewall.service* ]]; then
+      "$WG_TEST_ROOT/usr/local/sbin/homelab-wireguard-firewall" start
+    fi
+    ;;
+  disable)
+    if [[ "$*" == *wireguard-firewall.service* ]]; then
+      "$WG_TEST_ROOT/usr/local/sbin/homelab-wireguard-firewall" stop
+    fi
+    ;;
   is-active|is-enabled) exit 0 ;;
 esac
 SH
 cat > "$BIN/ip" <<'SH'
 #!/usr/bin/env bash
-[[ "$*" == "-brief address show dev wg0" ]] && printf 'wg0 UP 10.88.0.1/24\n'
+if [[ "$*" == "-brief address show dev wg0" ]]; then
+  printf 'wg0 UP 10.88.0.1/24\n'
+elif [[ "$*" == "link show dev wg0" ]]; then
+  exit 1
+fi
 SH
 cat > "$BIN/sysctl" <<'SH'
 #!/usr/bin/env bash
@@ -93,6 +136,15 @@ case "$1" in
   *) exit 0 ;;
 esac
 SH
+cat > "$BIN/nft" <<'SH'
+#!/usr/bin/env bash
+state="$WG_TEST_STATE/nft"
+case "$1" in
+  -f) cat > "$state" ;;
+  delete) rm -f "$state" ;;
+  list) cat "$state" 2>/dev/null || exit 1 ;;
+esac
+SH
 chmod +x "$BIN"/*
 
 export WG_ROOT="$ROOTFS" WG_TEST_ROOT="$ROOTFS" WG_TEST_STATE="$STATE"
@@ -105,10 +157,11 @@ assert_file "$ROOTFS/etc/wireguard/wg0.conf"
 assert_file "$ROOTFS/etc/sysctl.d/90-wireguard-forwarding.conf"
 assert_contains "$ROOTFS/etc/wireguard/wg0.conf" 'Address = 10.88.0.1/24'
 assert_contains "$ROOTFS/etc/wireguard/wg0.conf" 'ListenPort = 51820'
-assert_count "$STATE/rules" 'homelab-wireguard' 4
+assert_count "$STATE/rules" 'homelab-wireguard' 2
+assert_contains "$STATE/nft" 'iifname "wg0" oifname != "wg0" drop'
 
 "$INSTALL"
-assert_count "$STATE/rules" 'homelab-wireguard' 4
+assert_count "$STATE/rules" 'homelab-wireguard' 2
 
 if "$PEER" add omarchy bad-key 2>/dev/null; then
   fail "invalid public key accepted"
@@ -116,8 +169,15 @@ fi
 "$PEER" add omarchy AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
 assert_contains "$ROOTFS/etc/wireguard/wg0.conf" '# peer:omarchy'
 assert_contains "$ROOTFS/etc/wireguard/wg0.conf" 'AllowedIPs = 10.88.0.2/32'
+log_before=$(wc -l < "$STATE/log")
 "$PEER" add omarchy AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
 assert_count "$ROOTFS/etc/wireguard/wg0.conf" '# peer:omarchy' 1
+[[ $(wc -l < "$STATE/log") == "$log_before" ]] || fail "unchanged peer triggered runtime sync"
+"$PEER" add macbook AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAE=
+if "$PEER" add omarchy AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAE= 2>/dev/null; then
+  fail "duplicate public key accepted"
+fi
+"$PEER" revoke macbook
 "$PEER" revoke omarchy
 assert_not_contains "$ROOTFS/etc/wireguard/wg0.conf" '# peer:omarchy'
 
@@ -130,6 +190,7 @@ grep -Fq 'PersistentKeepalive = 25' <<< "$rendered" || fail "render missing keep
 "$INSTALL" --check
 "$INSTALL" --uninstall
 assert_count "$STATE/rules" 'homelab-wireguard' 0
+[[ ! -e "$STATE/nft" ]] || fail "nft table not removed"
 assert_file "$ROOTFS/etc/wireguard/server.key"
 
 OMARCHY="$ROOT/docs/examples/wireguard/omarchy.conf.example"

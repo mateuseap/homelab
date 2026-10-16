@@ -77,7 +77,7 @@ The following was applied directly on the VPS on 2026-07-23:
 
 The VPS runs a host-level WireGuard hub on `51820/udp` for the Omarchy workstation and MacBook. Each device has an individual key pair; private keys stay on that device and outside Git. The VPN uses `10.88.0.0/24` with fixed `/32` peer routes and no NAT or default route.
 
-Firewall rules permit forwarding only between authenticated peers on `wg0` and drop traffic from `wg0` toward every other interface. This prevents use as an open relay or route into k3s and Docker networks. WayVNC remains bound to loopback on the workstation and is reached through SSH over WireGuard. Deployment, revocation, rollback, and client compatibility details live in [WireGuard Remote Access](../operations/wireguard-remote-access.md).
+A dedicated nftables table evaluated before all k3s and Docker iptables chains drops traffic from `wg0` toward every other interface, so only authenticated peer-to-peer forwarding on `wg0` is possible. WireGuard rules are reapplied by their own systemd unit and never persisted through a full `netfilter-persistent save`. This prevents use as an open relay or route into k3s and Docker networks. WayVNC remains bound to loopback on the workstation and is reached through SSH over WireGuard. Deployment, revocation, rollback, and client compatibility details live in [WireGuard Remote Access](../operations/wireguard-remote-access.md).
 
 ## Pending items
 

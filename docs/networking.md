@@ -113,4 +113,4 @@ A new or migrated node must allow `7882/udp` and `7881/tcp` in any provider-leve
 
 The host-level WireGuard hub listens directly on `51820/udp`, outside Traefik and k3s. It uses `10.88.0.0/24`, with the VPS at `.1`, Omarchy workstation at `.2`, and MacBook at `.3`. Client routes contain only these VPN addresses. No default route or NAT uses the tunnel.
 
-Host firewall rules allow forwarding only from `wg0` back to `wg0` and drop traffic entering `wg0` that would leave another interface. VPN peers therefore cannot use the VPS to reach pod, service, Docker, or public networks. See [WireGuard Remote Access](operations/wireguard-remote-access.md) and [ADR-007](adr/007-host-wireguard-hub.md).
+A dedicated nftables table (`inet homelab_wireguard`, forward hook priority `-10`) runs before all k3s and Docker iptables chains and drops traffic entering `wg0` that would leave another interface; one labeled iptables rule accepts `wg0` to `wg0`. VPN peers therefore cannot use the VPS to reach pod, service, Docker, or public networks. See [WireGuard Remote Access](operations/wireguard-remote-access.md) and [ADR-007](adr/007-host-wireguard-hub.md).

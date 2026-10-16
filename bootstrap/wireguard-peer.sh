@@ -55,25 +55,47 @@ apply_candidate() {
   local candidate=$1 runtime
   validate_candidate "$candidate"
   chmod 600 "$candidate"
-  mv "$candidate" "$WG_CONFIG"
+  if cmp -s "$candidate" "$WG_CONFIG"; then
+    rm -f "$candidate"
+    return 1
+  fi
   if systemctl is-active --quiet "wg-quick@$WG_INTERFACE"; then
     runtime=$(mktemp "$WG_DIR/.wg0.runtime.XXXXXX")
     trap 'rm -f "${runtime:-}"' RETURN
-    wg-quick strip "$WG_CONFIG" > "$runtime"
-    wg syncconf "$WG_INTERFACE" "$runtime"
+    wg-quick strip "$candidate" > "$runtime"
+    if ! wg syncconf "$WG_INTERFACE" "$runtime"; then
+      rm -f "$runtime"
+      trap - RETURN
+      die "runtime sync failed; persistent configuration unchanged"
+    fi
     rm -f "$runtime"
     trap - RETURN
   fi
+  mv "$candidate" "$WG_CONFIG"
+  return 0
 }
 
 add_peer() {
   local name=$1 public_key=$2 address candidate base
   validate_public_key "$public_key"
   address=$(peer_address "$name")
+  if awk -v marker="# peer:$name" -v key="$public_key" -v address="$address" '
+    $0 == marker { target=1; next }
+    target && $0 == "PublicKey = " key { key_ok=1 }
+    target && $0 == "AllowedIPs = " address { address_ok=1 }
+    target && /^# peer:/ { exit }
+    END { exit !(key_ok && address_ok) }
+  ' "$WG_CONFIG"; then
+    log "$name already current"
+    return
+  fi
   candidate=$(mktemp "$WG_DIR/.wg0.conf.XXXXXX")
   base=$(mktemp "$WG_DIR/.wg0.base.XXXXXX")
   trap 'rm -f "${candidate:-}" "${base:-}"' RETURN
   without_peer "$name" "$WG_CONFIG" "$base"
+  if grep -Fqx "PublicKey = $public_key" "$base"; then
+    die "public key already assigned to another peer"
+  fi
   cat "$base" > "$candidate"
   [[ ! -s "$candidate" || $(tail -c1 "$candidate" | wc -l) -eq 1 ]] || printf '\n' >> "$candidate"
   cat >> "$candidate" <<EOF
@@ -83,10 +105,13 @@ add_peer() {
 PublicKey = $public_key
 AllowedIPs = $address
 EOF
-  apply_candidate "$candidate"
+  if apply_candidate "$candidate"; then
+    log "$name enrolled at $address"
+  else
+    log "$name already current"
+  fi
   rm -f "$base"
   trap - RETURN
-  log "$name enrolled at $address"
 }
 
 revoke_peer() {
@@ -95,9 +120,12 @@ revoke_peer() {
   candidate=$(mktemp "$WG_DIR/.wg0.conf.XXXXXX")
   trap 'rm -f "${candidate:-}"' RETURN
   without_peer "$name" "$WG_CONFIG" "$candidate"
-  apply_candidate "$candidate"
+  if apply_candidate "$candidate"; then
+    log "$name revoked"
+  else
+    log "$name already absent"
+  fi
   trap - RETURN
-  log "$name revoked"
 }
 
 render_peer() {

@@ -95,9 +95,8 @@ No peer uses `0.0.0.0/0` or `::/0`. No WireGuard traffic is NATed or masqueraded
 Deployment adds the minimum host rules:
 
 1. Accept UDP destination port `51820` on the public interface so authenticated WireGuard handshakes can reach the kernel.
-2. Accept established and related forwarded traffic for WireGuard.
-3. Accept forwarding from `wg0` to `wg0`, allowing the two explicitly configured peers to communicate.
-4. Drop new traffic entering through `wg0` when its output interface is not `wg0`.
+2. Create a dedicated nftables table `inet homelab_wireguard` with a forward base chain at priority `-10`, which runs before every iptables filter chain, and drop anything entering `wg0` that would leave another interface. k3s, Flannel, and Docker rule ordering cannot bypass it.
+3. Insert one labeled `FORWARD` accept at the top for `wg0` to `wg0`, needed because the iptables `FORWARD` policy is `DROP`.
 
 These rules prevent VPN peers from reaching the VPS's LAN-like interfaces, pod network, service network, Docker bridge, or public internet through forwarding. Peer public keys and `/32` `AllowedIPs` prevent unregistered devices and source-address impersonation from joining the VPN.
 
@@ -112,7 +111,7 @@ The deployment must not:
 - Add NAT, SNAT, DNAT, or masquerading.
 - Expose client SSH or VNC publicly.
 
-Rules are added idempotently with existence checks, labeled with stable comments, and persisted using the host's existing `netfilter-persistent` mechanism. Uninstall removes only rules bearing the WireGuard deployment's exact shape and comments.
+A dedicated `wireguard-firewall.service` applies only the WireGuard table and labeled rules after network, netfilter-persistent, k3s, and Docker startup and before `wg-quick@wg0`. It reasserts them on every start. The implementation must not call `netfilter-persistent save`, because that would snapshot transient k3s, Flannel, and Docker chains. Uninstall stops WireGuard first, confirms `wg0` is gone, then removes only the dedicated table and exact labeled rules.
 
 ## Configuration Lifecycle
 

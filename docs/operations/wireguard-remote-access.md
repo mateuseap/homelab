@@ -58,7 +58,8 @@ The installer:
 - generates `/etc/wireguard/server.key` only when absent;
 - creates `/etc/wireguard/wg0.conf` with mode `0600` only when absent;
 - persists IPv4 forwarding;
-- adds comment-labeled firewall rules idempotently;
+- installs `wireguard-firewall.service`, which on every boot creates nftables table `inet homelab_wireguard` (forward hook, priority `-10`, before all k3s and Docker iptables chains) dropping traffic from `wg0` to any other interface, plus two labeled iptables accepts (UDP `51820` input, `wg0` to `wg0` forward);
+- never runs `netfilter-persistent save`, so transient k3s, Flannel, and Docker chains are not snapshotted;
 - enables and starts `wg-quick@wg0`;
 - validates service, address, forwarding, and rules.
 
@@ -259,6 +260,7 @@ ip -brief address show wg0
 ss -lunp | grep ':51820'
 sudo wg show wg0
 sudo iptables -S | grep homelab-wireguard
+sudo nft list table inet homelab_wireguard
 sudo iptables -t nat -S | grep -i wireguard && echo 'UNEXPECTED NAT RULE' || true
 k3s kubectl get node
 k3s kubectl -n argocd get applications
@@ -276,7 +278,7 @@ ssh <user>@10.88.0.2
 Common failures:
 
 - No handshake: verify endpoint, public keys, UDP `51820`, and system clocks.
-- Handshake but no peer traffic: verify exact `/32` `AllowedIPs`, `ip_forward=1`, and `homelab-wireguard` rules.
+- Handshake but no peer traffic: verify exact `/32` `AllowedIPs`, `ip_forward=1`, `homelab-wireguard` rules, and `wireguard-firewall.service`.
 - Tunnel drops behind NAT: verify `PersistentKeepalive = 25` on each client.
 - SSH refused: verify `sshd` on Omarchy and the UFW rule scoped to `wg0` and `10.88.0.3`.
 - WayVNC unavailable: verify active Hyprland session, `WAYLAND_DISPLAY`, selected output, user service logs, and loopback listener.

@@ -6,7 +6,7 @@
 
 **Architecture:** WireGuard runs on the VPS host under `wg-quick@wg0`, outside Kubernetes because it is host connectivity needed even when k3s is unavailable. Versioned shell tools install the service and manage fixed `/32` peers, while explicit forwarding rules allow only peer-to-peer `wg0` traffic and block forwarding to every other interface.
 
-**Tech Stack:** Bash, WireGuard kernel module and `wireguard-tools`, systemd, iptables-nft, netfilter-persistent, GitHub Actions/GitFlow, SSH.
+**Tech Stack:** Bash, WireGuard kernel module and `wireguard-tools`, systemd, iptables-nft, GitHub Actions/GitFlow, SSH.
 
 **Spec:** `docs/superpowers/specs/2026-10-15-wireguard-remote-access-design.md`
 
@@ -40,7 +40,7 @@
 - Create: `bootstrap/wireguard-peer.sh`
 
 **Interfaces:**
-- Consumes: Ubuntu 24.04 host with systemd, apt, iptables-nft, and netfilter-persistent.
+- Consumes: Ubuntu 24.04 host with systemd, apt, iptables-nft, and nft.
 - Produces: `install-wireguard.sh [--check|--uninstall]` and `wireguard-peer.sh <add|revoke|render> <omarchy|macbook> [public-key]`.
 
 - [ ] **Step 1: Write the failing static and sandbox test**
@@ -68,7 +68,7 @@ WG_SUBNET=10.88.0.0/24
 WG_PORT=51820
 ```
 
-Use `umask 077`, apt only when `wg` is absent, atomic candidate files, `wg-quick strip` validation, comment-labeled `iptables -C` checks, `netfilter-persistent save`, systemd enable/start, and a read-only `--check`. `--uninstall` removes only exact labeled rules and disables the interface without destroying keys.
+Use `umask 077`, apt only when `wg` is absent, atomic candidate files, `wg-quick strip` validation, comment-labeled `iptables -C` checks, a dedicated nftables isolation table applied by `wireguard-firewall.service` (never `netfilter-persistent save`), systemd enable/start, and a read-only `--check`. `--uninstall` removes only exact labeled rules and disables the interface without destroying keys.
 
 - [ ] **Step 4: Implement minimal peer manager**
 

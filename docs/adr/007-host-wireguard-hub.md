@@ -18,7 +18,7 @@ Run WireGuard directly on the VPS host as `wg-quick@wg0`, listening on UDP `5182
 - Omarchy: `10.88.0.2`
 - MacBook: `10.88.0.3`
 
-Use `/32` peer routes and client split routes only. Do not add NAT or a default route through the VPS. Allow forwarded traffic only when both ingress and egress interfaces are `wg0`; drop traffic entering `wg0` that would leave through another interface.
+Use `/32` peer routes and client split routes only. Do not add NAT or a default route through the VPS. Allow forwarded traffic only when both ingress and egress interfaces are `wg0`. Enforce the drop for any other egress in a dedicated nftables table hooked at priority `-10`, ahead of every iptables chain owned by k3s and Docker, applied by `wireguard-firewall.service` rather than a whole-ruleset save.
 
 Manage host state with versioned, idempotent scripts because ArgoCD cannot manage host packages, systemd units, `/etc/wireguard`, or persistent host firewall rules. Private keys remain on their respective hosts and never enter Git.
 
