@@ -1,0 +1,11 @@
+# Public template only. After replacing placeholders this file is secret.
+# Keep it outside Git with mode 0600.
+[Interface]
+PrivateKey = <PRIVATE_KEY>
+Address = 10.88.0.3/32
+
+[Peer]
+PublicKey = <SERVER_PUBLIC_KEY>
+Endpoint = 179.197.71.43:51820
+AllowedIPs = 10.88.0.1/32, 10.88.0.2/32
+PersistentKeepalive = 25
