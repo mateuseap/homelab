@@ -17,9 +17,9 @@ spec:
       containers:
         - name: 9router
           # Third-party image on Docker Hub, not built by this user's own
-          # CI. Pin the multi-platform v0.5.95 image index so deploys are
+          # CI. Pin the multi-platform v0.5.104 image index so deploys are
           # reproducible and upgrades remain explicit and reviewable.
-          image: decolua/9router@sha256:4316fefb95ea642d57db885d906b1227b1768b15ac5def314621fd781da7b3f1
+          image: decolua/9router@sha256:5fc7020f3cf1ca6831bffe80314ecab9dde915d27ee3c479a4bb66f45dabbc27
           imagePullPolicy: IfNotPresent
           securityContext:
             allowPrivilegeEscalation: false
