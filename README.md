@@ -24,7 +24,7 @@ Hand-configured servers rot: undocumented tweaks pile up, migrations become arch
 
 ## What runs on it
 
-Five user-facing applications are self-hosted on the 1 vCPU / 4 GB VPS:
+Eight user-facing applications are self-hosted on the 1 vCPU / 4 GB VPS:
 
 | App | Purpose |
 |-----|---------|
@@ -32,7 +32,10 @@ Five user-facing applications are self-hosted on the 1 vCPU / 4 GB VPS:
 | 👾 **[PixelHub](https://github.com/mateuseap/pixelhub)** | Gather-style 2D world with proximity chat and voice |
 | 🎵 **[Mixtape](https://github.com/mateuseap/mixtape)** | Open library of interactive 3D sound equipment (MP3 player, CD player) |
 | 🎙 **Sotto** | Bilingual English/Portuguese live transcription with AI-generated summaries through 9Router (`sotto.lab.mateuseap.com`) |
+| 🎓 **TCC** | Private site for my undergraduate thesis: PDF, meeting slides, and executed notebooks behind an app-level login (`tcc.lab.mateuseap.com`) |
 | 🧭 **9Router** | Self-hosted AI gateway providing authenticated rate-limit fallback for Claude Code (`9router.lab.mateuseap.com`) |
+| 🎪 **Capo Aberto** | Production web app and API at [capoaberto.com.br](https://capoaberto.com.br), with a separate staging environment at `staging.capoaberto.com.br` |
+| 🏢 **Origin Labs Landing** | Company landing page at [originlabsbr.com](https://originlabsbr.com) |
 
 Infrastructure services support those apps:
 
@@ -44,7 +47,7 @@ Infrastructure services support those apps:
 | 🗝 **sealed-secrets** | Encrypted secrets, safe in public git |
 | 💾 **Nightly backups** | `pg_dump` to Cloudflare R2, 14-day rotation |
 
-The externally hosted **[HomeLab Landing](https://github.com/mateuseap/homelab-landing)** is the public showcase. It is separate from the five self-hosted applications and cluster infrastructure.
+The externally hosted **[HomeLab Landing](https://github.com/mateuseap/homelab-landing)** is the public showcase. It is separate from the self-hosted applications and cluster infrastructure.
 
 ## Architecture at a glance
 
