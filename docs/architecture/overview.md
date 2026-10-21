@@ -1,6 +1,6 @@
 # Platform Overview
 
-This homelab is one VPS (1 vCPU, 4 GB, 179.197.71.43) running single-node k3s, declared entirely in this git repo. ArgoCD watches the repo and makes the cluster match it. Five user-facing applications are self-hosted on top: ChessKernel, PixelHub, Mixtape, Sotto, and 9Router. ArgoCD, Traefik, cert-manager, sealed-secrets, Prometheus, Grafana, exporters, data stores, and backup jobs are supporting infrastructure. HomeLab Landing is an externally hosted public showcase, not one of the five self-hosted applications.
+This homelab is one VPS (1 vCPU, 4 GB, 179.197.71.43) running single-node k3s, declared entirely in this git repo. ArgoCD watches the repo and makes the cluster match it. Eight user-facing applications are self-hosted on top: ChessKernel, PixelHub, Mixtape, Sotto, 9Router, TCC, Capo Aberto (production and staging), and Origin Labs Landing. ArgoCD, Traefik, cert-manager, sealed-secrets, Prometheus, Grafana, exporters, data stores, and backup jobs are supporting infrastructure. HomeLab Landing is an externally hosted public showcase, not one of the self-hosted applications.
 
 For the decisions behind this design, see the [ADRs](../adr/). For the original design note, see [docs/specs](../specs/). For step-by-step operations, see the [runbook](../RUNBOOK.md).
 

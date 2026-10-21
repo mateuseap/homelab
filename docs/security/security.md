@@ -91,3 +91,7 @@ The High Sierra MacBook cannot run a maintained WireGuard client, so it uses SSH
 On a single-NIC VPS the node IP equals the public IP, so the kubelet (10250) and the k3s API (6443) are reachable from the internet. Both are authenticated and return `401` without credentials, so this is a low-severity exposure, not an open door. Host-level blocking is risky here because the same interface carries the control plane, so blocking it wrong can lock out the cluster.
 
 The recommended defense in depth is a **provider-level firewall** (the cloud panel), restricting 6443 and 10250 to known admin IPs while leaving 80, 443, and the LiveKit media ports open. This is the one meaningful hardening step left that does not risk the control plane, and it is the honest cost of running Kubernetes on one public node rather than a private control plane. There is no HA and no network policy engine beyond namespace isolation; both are conscious tradeoffs for a 1 vCPU homelab.
+
+## TCC site: app-level login
+
+The TCC site (`tcc.lab.mateuseap.com`) follows the Sotto model: a bcrypt hash (`login-password-hash`, cost 12) in `apps/tcc/sealed-secrets.yaml`, an `httpOnly`, `SameSite=Strict`, `Secure` session cookie, a per-IP login rate limit, and no Traefik `BasicAuth`. Only `/login`, its stylesheet, and `/healthz` are reachable without a session; every response carries `X-Robots-Tag: noindex, nofollow`. The container runs non-root with a read-only root filesystem and all capabilities dropped. See [the TCC guide](../operations/tcc-guide.md).

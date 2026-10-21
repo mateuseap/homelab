@@ -102,3 +102,16 @@ metadata:
       sotto.lab.mateuseap.com, gated by a shared session token.
   labels:
     app.kubernetes.io/part-of: homelab
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: tcc
+  annotations:
+    argocd.argoproj.io/sync-options: Prune=false
+    homelab.mateuseap.com/description: >-
+      TCC: private site for the undergraduate thesis (PINNs vs. finite
+      differences). Serves the thesis PDF, meeting slides, and executed
+      notebooks at tcc.lab.mateuseap.com behind an app-level bcrypt login.
+  labels:
+    app.kubernetes.io/part-of: homelab

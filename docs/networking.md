@@ -1,6 +1,6 @@
 # Networking
 
-One node, one IP, many cluster hostnames. This document describes how names reach the node, how the node routes them, how certificates are issued, and the single exception to host-based routing (LiveKit media). Five user-facing applications are self-hosted through this cluster: ChessKernel, PixelHub, Mixtape, Sotto, and 9Router. Supporting hosts expose infrastructure services such as ArgoCD and Grafana. HomeLab Landing is externally hosted and outside this cluster route map. For the decisions behind this design, see [ADR-005](adr/005-wildcard-dns-traefik-sni-routing.md) and [ADR-004](adr/004-cert-manager-http01-vs-dns01.md).
+One node, one IP, many cluster hostnames. This document describes how names reach the node, how the node routes them, how certificates are issued, and the single exception to host-based routing (LiveKit media). Eight user-facing applications are self-hosted through this cluster: ChessKernel, PixelHub, Mixtape, Sotto, 9Router, TCC, Capo Aberto (production and staging), and Origin Labs Landing. Supporting hosts expose infrastructure services such as ArgoCD and Grafana. HomeLab Landing is externally hosted and outside this cluster route map. For the decisions behind this design, see [ADR-005](adr/005-wildcard-dns-traefik-sni-routing.md) and [ADR-004](adr/004-cert-manager-http01-vs-dns01.md).
 
 ## Wildcard DNS
 
@@ -30,6 +30,7 @@ flowchart LR
     Traefik -->|pixelhub.lab| PH["pixelhub client"]
     Traefik -->|mixtape.lab| MIX["mixtape"]
     Traefik -->|sotto.lab| SOT["sotto"]
+    Traefik -->|tcc.lab| TCC["tcc site"]
     Traefik -->|9router.lab| R9R["9router"]
     Traefik -->|argo.lab| ARG["argocd-server"]
     Traefik -->|grafana.lab| GRAF["grafana"]
@@ -53,6 +54,10 @@ flowchart LR
 | `livekit.lab.mateuseap.com` | LiveKit signaling | `wss` signaling only; media bypasses Traefik (see below) |
 | `mixtape.lab.mateuseap.com` | Mixtape service | `mixtape-tls` |
 | `sotto.lab.mateuseap.com` | Sotto client and API | `sotto-tls`; app-level bcrypt login; bilingual English/Portuguese transcription and AI summaries through 9Router |
+| `tcc.lab.mateuseap.com` | TCC site (thesis PDF, slides, notebooks) | `tcc-tls`; app-level bcrypt login, same model as Sotto; `noindex` headers |
+| `capoaberto.com.br`, `www.capoaberto.com.br`, `capoaberto.lab.mateuseap.com` | Capo Aberto web and API | Own A records for the `.com.br` hosts; `/api` stripped by a Traefik Middleware |
+| `staging.capoaberto.com.br` | Capo Aberto staging | Separate Ingress per host; `noindex` header Middleware |
+| `originlabsbr.com`, `originlabsbr.com.br`, `originlabs.lab.mateuseap.com` | Origin Labs landing | Own A records for the company domains |
 | `9router.lab.mateuseap.com` | Authenticated 9Router AI gateway | `9router-tls`; API key required; OAuth tokens and issued API keys stored on its PVC |
 
 ### Why ChessKernel has two Ingress objects

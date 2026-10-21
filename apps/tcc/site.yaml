@@ -1,0 +1,53 @@
+# Site privado do TCC (mateuseap/tcc): PDF, slides e notebooks executados,
+# atrás de login com senha. Mesmo modelo de acesso do Sotto: bcrypt contra
+# LOGIN_PASSWORD_HASH e cookie httpOnly, sem BasicAuth no Traefik.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: site
+  namespace: tcc
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: site }
+  template:
+    metadata:
+      labels: { app: site }
+    spec:
+      imagePullSecrets:
+        - name: ghcr-pull
+      securityContext:
+        seccompProfile: { type: RuntimeDefault }
+      containers:
+        - name: site
+          image: ghcr.io/mateuseap/tcc-site:latest
+          imagePullPolicy: Always
+          securityContext:
+            allowPrivilegeEscalation: false
+            runAsNonRoot: true
+            readOnlyRootFilesystem: true
+            capabilities: { drop: [ALL] }
+          ports: [{ name: http, containerPort: 8080 }]
+          env:
+            - name: LOGIN_PASSWORD_HASH
+              valueFrom:
+                secretKeyRef: { name: tcc-site-secrets, key: login-password-hash }
+          resources:
+            requests: { cpu: 10m, memory: 32Mi }
+            limits: { memory: 96Mi }
+          readinessProbe:
+            httpGet: { path: /healthz, port: 8080 }
+            periodSeconds: 15
+          livenessProbe:
+            httpGet: { path: /healthz, port: 8080 }
+            initialDelaySeconds: 10
+            periodSeconds: 30
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: site
+  namespace: tcc
+spec:
+  selector: { app: site }
+  ports: [{ name: http, port: 80, targetPort: 8080 }]
