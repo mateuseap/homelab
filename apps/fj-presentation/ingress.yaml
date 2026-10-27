@@ -1,0 +1,22 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: fj-presentation
+  namespace: fj-presentation
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+spec:
+  ingressClassName: traefik
+  rules:
+    - host: fj.lab.mateuseap.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: fj-presentation
+                port: { number: 80 }
+  tls:
+    - hosts: [fj.lab.mateuseap.com]
+      secretName: fj-presentation-tls
