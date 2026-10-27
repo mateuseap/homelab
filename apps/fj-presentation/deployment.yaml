@@ -24,10 +24,10 @@ spec:
           args:
             - |
               curl --fail --location --silent --show-error \
-                https://github.com/mateuseap/compilers/archive/c9afc60179dd0ddee4bacf3f47cc357a6a5e5a8b.tar.gz \
+                https://github.com/mateuseap/compilers/archive/1948df1c507e9cf071b4978a0f90fd7a1c02c3af.tar.gz \
                 | tar -xz --strip-components=3 \
                     -C /site \
-                    compilers-c9afc60179dd0ddee4bacf3f47cc357a6a5e5a8b/seminario-featherweight-java/apresentacao
+                    compilers-1948df1c507e9cf071b4978a0f90fd7a1c02c3af/seminario-featherweight-java/apresentacao
               test -f /site/index.html
               test -f /site/assets/tapl-fig19-3.png
           securityContext:

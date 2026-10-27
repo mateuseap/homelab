@@ -16,7 +16,7 @@
 - Every container has CPU/memory requests and memory limits.
 - English only; no em dash.
 - No plaintext secrets.
-- Source archive pinned to compilers commit `c9afc60179dd0ddee4bacf3f47cc357a6a5e5a8b`.
+- Source archive pinned to compilers commit `1948df1c507e9cf071b4978a0f90fd7a1c02c3af`.
 - Only presentation directory is publicly served; no guide or PDF files.
 
 ## Review Focus
