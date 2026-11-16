@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: fantasma
+  namespace: fantasma
+spec:
+  selector: { app: fantasma }
+  ports:
+    - name: http
+      port: 80
+      targetPort: http
