@@ -17,6 +17,15 @@ spec:
               service:
                 name: fantasma
                 port: { number: 80 }
+    - host: testemunha.lab.mateuseap.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: fantasma
+                port: { number: 80 }
   tls:
-    - hosts: [fantasma.lab.mateuseap.com]
-      secretName: fantasma-tls
+    - hosts: [testemunha.lab.mateuseap.com, fantasma.lab.mateuseap.com]
+      secretName: testemunha-tls
