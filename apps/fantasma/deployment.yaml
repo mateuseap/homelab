@@ -24,10 +24,10 @@ spec:
           args:
             - |
               curl --fail --location --silent --show-error \
-                https://github.com/mateuseap/media-interaction/archive/0a837e6678f14c1e7a72dd2dced3be7def35ad4e.tar.gz \
+                https://github.com/mateuseap/media-interaction/archive/56ba66e3fa194642fa7c5a7c38ef868f1f7e6282.tar.gz \
                 | tar -xz --strip-components=3 \
                     -C /site \
-                    media-interaction-0a837e6678f14c1e7a72dd2dced3be7def35ad4e/movimento-3/experimento
+                    media-interaction-56ba66e3fa194642fa7c5a7c38ef868f1f7e6282/movimento-3/experimento
               test -f /site/index.html
           securityContext:
             allowPrivilegeEscalation: false
