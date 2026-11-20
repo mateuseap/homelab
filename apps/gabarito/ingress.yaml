@@ -1,0 +1,22 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: gabarito
+  namespace: gabarito
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+spec:
+  ingressClassName: traefik
+  rules:
+    - host: gabarito.lab.mateuseap.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: gabarito
+                port: { number: 80 }
+  tls:
+    - hosts: [gabarito.lab.mateuseap.com]
+      secretName: gabarito-tls
