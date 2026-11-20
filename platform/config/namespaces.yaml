@@ -115,3 +115,16 @@ metadata:
       notebooks at tcc.lab.mateuseap.com behind an app-level bcrypt login.
   labels:
     app.kubernetes.io/part-of: homelab
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: gabarito
+  annotations:
+    argocd.argoproj.io/sync-options: Prune=false
+    homelab.mateuseap.com/description: >-
+      Gabarito: practice exams in the real test format, starting with the
+      ETE-PE 2027 selection. Static site served by nginx, progress kept in the
+      browser. Public at gabarito.lab.mateuseap.com.
+  labels:
+    app.kubernetes.io/part-of: homelab

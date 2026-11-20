@@ -180,6 +180,7 @@ Credentials come from the sealed `r2-backup-credentials`. Restore is a manual `g
 | `chesskernel` | Client, NestJS server, PostgreSQL, Redis, backup CronJob |
 | `pixelhub` | Client, Colyseus server, LiveKit SFU |
 | `mixtape` | Single node/express service, PVC-backed storage, multiple 3D sound-equipment UIs |
+| `gabarito` | Static Vite site behind nginx, no backend; student progress lives in the browser |
 | `sotto` | Client (nginx) + Node server; bilingual English/Portuguese live Deepgram transcription and AI summaries through 9Router; no PVC |
 | `9router` | Authenticated self-hosted AI gateway (Deployment + PVC); holds subscription OAuth tokens and issued API keys on its PVC |
 
