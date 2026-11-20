@@ -1,15 +1,15 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: fantasma
-  namespace: fantasma
+  name: testemunha
+  namespace: testemunha
 spec:
   replicas: 1
   selector:
-    matchLabels: { app: fantasma }
+    matchLabels: { app: testemunha }
   template:
     metadata:
-      labels: { app: fantasma }
+      labels: { app: testemunha }
     spec:
       securityContext:
         runAsNonRoot: true
