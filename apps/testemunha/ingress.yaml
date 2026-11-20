@@ -1,22 +1,13 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: fantasma
-  namespace: fantasma
+  name: testemunha
+  namespace: testemunha
   annotations:
     cert-manager.io/cluster-issuer: letsencrypt-prod
 spec:
   ingressClassName: traefik
   rules:
-    - host: fantasma.lab.mateuseap.com
-      http:
-        paths:
-          - path: /
-            pathType: Prefix
-            backend:
-              service:
-                name: fantasma
-                port: { number: 80 }
     - host: testemunha.lab.mateuseap.com
       http:
         paths:
@@ -24,8 +15,8 @@ spec:
             pathType: Prefix
             backend:
               service:
-                name: fantasma
+                name: testemunha
                 port: { number: 80 }
   tls:
-    - hosts: [testemunha.lab.mateuseap.com, fantasma.lab.mateuseap.com]
+    - hosts: [testemunha.lab.mateuseap.com]
       secretName: testemunha-tls

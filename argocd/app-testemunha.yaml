@@ -1,7 +1,7 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: fantasma
+  name: testemunha
   namespace: argocd
   annotations:
     argocd.argoproj.io/sync-wave: "2"
@@ -12,10 +12,10 @@ spec:
   source:
     repoURL: https://github.com/mateuseap/homelab
     targetRevision: main
-    path: apps/fantasma
+    path: apps/testemunha
   destination:
     server: https://kubernetes.default.svc
-    namespace: fantasma
+    namespace: testemunha
   syncPolicy:
     automated: { prune: true, selfHeal: true }
     syncOptions: [CreateNamespace=true]
