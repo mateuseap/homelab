@@ -31,6 +31,7 @@ Eight user-facing applications are self-hosted on the 1 vCPU / 4 GB VPS:
 | ♟️ **[ChessKernel](https://github.com/mateuseap/chesskernel)** | Chess platform at [chesskernel.com](https://chesskernel.com) |
 | 👾 **[PixelHub](https://github.com/mateuseap/pixelhub)** | Gather-style 2D world with proximity chat and voice |
 | 🎵 **[Mixtape](https://github.com/mateuseap/mixtape)** | Open library of interactive 3D sound equipment (MP3 player, CD player) |
+| ✅ **[Gabarito](https://github.com/mateuseap/gabarito)** | Practice exams in the real test format, starting with the ETE-PE 2027 selection |
 | 🎙 **Sotto** | Bilingual English/Portuguese live transcription with AI-generated summaries through 9Router (`sotto.lab.mateuseap.com`) |
 | 🎓 **TCC** | Private site for my undergraduate thesis: PDF, meeting slides, and executed notebooks behind an app-level login (`tcc.lab.mateuseap.com`) |
 | 🧭 **9Router** | Self-hosted AI gateway providing authenticated rate-limit fallback for Claude Code (`9router.lab.mateuseap.com`) |
