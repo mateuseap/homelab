@@ -1,22 +1,22 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: forja-mundo
-  namespace: forja-mundo
+  name: bichos
+  namespace: bichos
   annotations:
     cert-manager.io/cluster-issuer: letsencrypt-prod
 spec:
   ingressClassName: traefik
   rules:
-    - host: forja-mundo.lab.mateuseap.com
+    - host: bichos.lab.mateuseap.com
       http:
         paths:
           - path: /
             pathType: Prefix
             backend:
               service:
-                name: forja-mundo
+                name: bichos
                 port: { number: 80 }
   tls:
-    - hosts: [forja-mundo.lab.mateuseap.com]
-      secretName: forja-mundo-tls
+    - hosts: [bichos.lab.mateuseap.com]
+      secretName: bichos-tls
