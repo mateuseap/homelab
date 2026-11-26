@@ -1,0 +1,70 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: faz-ai
+  namespace: faz-ai
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: faz-ai }
+  template:
+    metadata:
+      labels: { app: faz-ai }
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 101
+        runAsGroup: 101
+        fsGroup: 101
+        seccompProfile: { type: RuntimeDefault }
+      initContainers:
+        - name: fetch-experiment
+          image: curlimages/curl:8.12.1
+          command: [/bin/sh, -ec]
+          args:
+            - |
+              curl --fail --location --silent --show-error \
+                https://github.com/mateuseap/media-interaction/archive/1ce66f6b83372ed68267b27d322901e69e83aa0e.tar.gz \
+                | tar -xz --strip-components=3 \
+                    -C /site \
+                    media-interaction-1ce66f6b83372ed68267b27d322901e69e83aa0e/movimento-3/faz-ai
+              test -f /site/index.html
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities: { drop: [ALL] }
+            readOnlyRootFilesystem: true
+          resources:
+            requests: { cpu: 5m, memory: 8Mi }
+            limits: { memory: 32Mi }
+          volumeMounts:
+            - { name: site, mountPath: /site }
+            - { name: tmp, mountPath: /tmp }
+      containers:
+        - name: nginx
+          image: nginxinc/nginx-unprivileged:1.27-alpine
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities: { drop: [ALL] }
+            readOnlyRootFilesystem: true
+          ports:
+            - { name: http, containerPort: 8080 }
+          resources:
+            requests: { cpu: 5m, memory: 8Mi }
+            limits: { memory: 32Mi }
+          readinessProbe:
+            httpGet: { path: /index.html, port: http }
+            periodSeconds: 10
+          livenessProbe:
+            httpGet: { path: /index.html, port: http }
+            initialDelaySeconds: 10
+            periodSeconds: 30
+          volumeMounts:
+            - { name: site, mountPath: /usr/share/nginx/html, readOnly: true }
+            - { name: nginx-cache, mountPath: /var/cache/nginx }
+            - { name: nginx-run, mountPath: /var/run }
+            - { name: tmp, mountPath: /tmp }
+      volumes:
+        - { name: site, emptyDir: {} }
+        - { name: nginx-cache, emptyDir: {} }
+        - { name: nginx-run, emptyDir: {} }
+        - { name: tmp, emptyDir: {} }
