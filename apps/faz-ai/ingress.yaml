@@ -1,0 +1,22 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: faz-ai
+  namespace: faz-ai
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+spec:
+  ingressClassName: traefik
+  rules:
+    - host: faz-ai.lab.mateuseap.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: faz-ai
+                port: { number: 80 }
+  tls:
+    - hosts: [faz-ai.lab.mateuseap.com]
+      secretName: faz-ai-tls
