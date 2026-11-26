@@ -1,10 +1,10 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: faz-ai
-  namespace: faz-ai
+  name: bichos
+  namespace: bichos
 spec:
-  selector: { app: faz-ai }
+  selector: { app: bichos }
   ports:
     - name: http
       port: 80

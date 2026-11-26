@@ -1,15 +1,15 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: forja-mundo
-  namespace: forja-mundo
+  name: bichos
+  namespace: bichos
 spec:
   replicas: 1
   selector:
-    matchLabels: { app: forja-mundo }
+    matchLabels: { app: bichos }
   template:
     metadata:
-      labels: { app: forja-mundo }
+      labels: { app: bichos }
     spec:
       securityContext:
         runAsNonRoot: true
@@ -24,10 +24,10 @@ spec:
           args:
             - |
               curl --fail --location --silent --show-error \
-                https://github.com/mateuseap/media-interaction/archive/703b4a0a35f210a8c237e7fa91f41bf9184826d7.tar.gz \
+                https://github.com/mateuseap/media-interaction/archive/2a3a9dd42c4dfd675ae3a7eac95d2d93a9f2398e.tar.gz \
                 | tar -xz --strip-components=3 \
                     -C /site \
-                    media-interaction-703b4a0a35f210a8c237e7fa91f41bf9184826d7/movimento-3/forja-mundo
+                    media-interaction-2a3a9dd42c4dfd675ae3a7eac95d2d93a9f2398e/movimento-3/bichos
               test -f /site/index.html
           securityContext:
             allowPrivilegeEscalation: false

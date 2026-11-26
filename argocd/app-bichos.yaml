@@ -1,7 +1,7 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: faz-ai
+  name: bichos
   namespace: argocd
   annotations:
     argocd.argoproj.io/sync-wave: "2"
@@ -12,10 +12,10 @@ spec:
   source:
     repoURL: https://github.com/mateuseap/homelab
     targetRevision: main
-    path: apps/faz-ai
+    path: apps/bichos
   destination:
     server: https://kubernetes.default.svc
-    namespace: faz-ai
+    namespace: bichos
   syncPolicy:
     automated: { prune: true, selfHeal: true }
     syncOptions: [CreateNamespace=true]
